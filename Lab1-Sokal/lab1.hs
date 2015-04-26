@@ -23,11 +23,11 @@ harvest body = foldl (++) [] (sections (~== "<p>") body)
 getBody :: [Tag String] -> [Tag String]
 getBody tags = head $ sections (~== "<div id=body>") tags
 
-main = do
-  tags <- fmap parseTags $ openURL "http://muse.jhu.edu/journals/postmodern_culture/v024/24.1.marriott.html"
-  let body = innerText $ harvest $ getBody tags
-  writeFile "body.txt" body
-
 -- main = do
---   src <- openURL "http://muse.jhu.edu/journals/postmodern_culture/v024/24.1.marriott.html"
---   writeFile "temp.html" src
+--   tags <- fmap parseTags $ openURL "http://muse.jhu.edu/journals/postmodern_culture/v024/24.1.marriott.html"
+--   let body = innerText $ harvest $ getBody tags
+--   writeFile "body.txt" body
+
+main = do
+  src <- openURL "http://muse.jhu.edu/journals/postmodern_culture/v024/24.1.marriott.html"
+  writeFile "temp.html" src
