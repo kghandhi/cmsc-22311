@@ -1,8 +1,8 @@
 import Network.HTTP
 import Text.HTML.TagSoup
 
-getArticle :: String -> [Tag String]
-getArticle pg = parseTags pg
+-- getArticle :: String -> [Tag String]
+-- getArticle pg = parseTags pg
 
 -- String: url
 --
@@ -15,6 +15,13 @@ openURL url = simpleHTTP (getRequest url) >>= getResponseBody
 --   let lns = lines cont
 --   -- mapM_ print lns
 --   mapM_ (\x -> getHttpBody x >>= print . show . getArticle) lns
+
+
 main = do
-  src <- openURL "http://muse.jhu.edu/journals/postmodern_culture/v024/24.1.marriott.html"
-  writeFile "temp.html" src
+  tags <- fmap parseTags $ openURL "http://muse.jhu.edu/journals/postmodern_culture/v024/24.1.marriott.html"
+  let body = head $ sections (~== "<div id=body>") tags
+  writeFile "body.txt" body
+
+-- main = do
+--   src <- openURL "http://muse.jhu.edu/journals/postmodern_culture/v024/24.1.marriott.html"
+--   writeFile "temp.html" src
