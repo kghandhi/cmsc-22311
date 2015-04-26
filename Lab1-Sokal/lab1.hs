@@ -25,7 +25,6 @@ getBody tags = head $ sections (~== "<div id=body>") tags
 
 main = do
   tags <- fmap parseTags $ openURL "http://muse.jhu.edu/journals/postmodern_culture/v024/24.1.marriott.html"
-  print $ length (sections (~== "<div id=body>") tags)
   let body = innerText $ harvest $ getBody tags
   writeFile "body.txt" body
 
