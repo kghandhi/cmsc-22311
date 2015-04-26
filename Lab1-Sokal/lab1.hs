@@ -6,12 +6,15 @@ getArticle pg = parseTags pg
 
 -- String: url
 --
-getHttpBody :: String -> IO String
-getHttpBody url = simpleHTTP (getRequest url) >>= getResponseBody
+openURL :: String -> IO String
+openURL url = simpleHTTP (getRequest url) >>= getResponseBody
 
 --look for div id = "body" tag is div, attr is id value of attr is body
+-- main = do
+--   cont <- getContents
+--   let lns = lines cont
+--   -- mapM_ print lns
+--   mapM_ (\x -> getHttpBody x >>= print . show . getArticle) lns
 main = do
-  cont <- getContents
-  let lns = lines cont
-  -- mapM_ print lns
-  mapM_ (\x -> getHttpBody x >>= print . show . getArticle) lns
+  src <- openURL "http://muse.jhu.edu/journals/postmodern_culture/v024/24.1.marriott.html"
+  writeFile "temp.html" src
