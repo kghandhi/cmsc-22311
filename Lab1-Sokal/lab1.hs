@@ -20,7 +20,7 @@ openURL url = simpleHTTP (getRequest url) >>= getResponseBody
 main = do
   tags <- fmap parseTags $ openURL "http://muse.jhu.edu/journals/postmodern_culture/v024/24.1.marriott.html"
   let body = head $ sections (~== "<div id=body>") tags
-  writeFile "body.txt" body
+  print . show $ body
 
 -- main = do
 --   src <- openURL "http://muse.jhu.edu/journals/postmodern_culture/v024/24.1.marriott.html"
