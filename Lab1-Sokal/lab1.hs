@@ -54,9 +54,9 @@ main = do
   src <- readFile "urls.txt"
   let urls = lines src
   -- tags <- foldl (\murl tgs -> (fmap parseTags murl) ++ tgs)  [] (L.map openURL lines)
-  tgs <- mapM (fmap parseTags . openURL) urls
-  let tags = foldl (++) [] tgs
+  tags <- mapM (fmap parseTags . openURL) urls
+  let txt = foldl (++) [] (L.map extractWords tags)
   --tags <- fmap parseTags turls
   --mapM_ (parseTags . openURL) urls
   -- tags <- fmap parseTags $ openURL "http://muse.jhu.edu/journals/postmodern_culture/v024/24.1.mickalites.html"
-  writeFile "sokal.model" $ unlines (L.map show (suck $ extractWords tags))
+  writeFile "sokal.model" $ unlines (L.map show (suck txt))
