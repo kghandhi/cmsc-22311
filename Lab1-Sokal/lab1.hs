@@ -1,5 +1,5 @@
 import Data.Maybe
-import Data.List
+import Data.List hiding (insert, empty)
 import Data.Map hiding (foldl)
 import Network.HTTP
 import Text.HTML.TagSoup
@@ -26,6 +26,12 @@ extractWords tags = words $ innerText $ harvest $ getBody tags
 
 makePairs :: [String] -> [(String, String)]
 makePairs txt = zip txt (drop 1 txt)
+
+makePrim :: [String] -> PrimitiveModel
+makePrim txt = foldl helper (empty :: PrimitiveModel) txt
+  where
+    helper acc (x:y:z:rest) = if member (x,y) acc then adjust (++ [z]) (x,y) acc
+                              else insert (x, y) [z] acc
 
 -- makePrim txt = fold helper txt Map ("","") []
 --   let
