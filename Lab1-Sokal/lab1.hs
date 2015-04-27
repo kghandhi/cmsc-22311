@@ -28,10 +28,17 @@ makePairs :: [String] -> [(String, String)]
 makePairs txt = zip txt (drop 1 txt)
 
 makePrim :: [String] -> PrimitiveModel
-makePrim txt = foldl helper (empty :: PrimitiveModel) txt
+makePrim txt = helper (empty :: PrimitiveModel) txt
   where
-    helper acc (x:y:z:rest) = if member (x,y) acc then adjust (++ [z]) (x,y) acc
-                              else insert (x, y) [z] acc
+    helper acc (x:y:[]) = acc
+    helper acc (x:y:z:rest) = if member (x,y) acc then helper (adjust (++ [z]) (x,y) acc) (y:z:rest)
+                              else helper (insert (x, y) [z] acc) (y:z:rest)
+
+
+
+
+    -- helper acc (x:y:z:rest) = if member (x,y) acc then adjust (++ [z]) (x,y) acc
+    --                           else insert (x, y) [z] acc
 
 -- makePrim txt = fold helper txt Map ("","") []
 --   let
