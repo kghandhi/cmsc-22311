@@ -52,5 +52,5 @@ suck txt = reverse $ makeProcess $ makeFreq $ makePrim txt
 
 main = do
   tags <- fmap parseTags $ openURL "http://muse.jhu.edu/journals/postmodern_culture/v024/24.1.mickalites.html"
-  --L.map (\tup -> writeFile "sokal.model" (show tup)) $ suck $ extractWords tags
-  print . show $ extractWords tags
+  mapM (\tup -> writeFile "sokal.model" (show tup)) $ suck $ extractWords tags
+  -- print . show $ extractWords tags
