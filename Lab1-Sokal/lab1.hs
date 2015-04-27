@@ -9,7 +9,6 @@ type PrimitiveModel = Map (String, String) [String]
 type ProcessModel = [(String, [(Int, Int)])]
 
 
-
 openURL :: String -> IO String
 openURL url = simpleHTTP (getRequest url) >>= getResponseBody
 
@@ -40,9 +39,10 @@ makePrim txt = helper (empty :: PrimitiveModel) txt
     -- helper acc (x:y:z:rest) = if member (x,y) acc then adjust (++ [z]) (x,y) acc
     --                           else insert (x, y) [z] acc
 
--- makePrim txt = fold helper txt Map ("","") []
+-- makeProcess :: PrimitiveModel -> ProcessModel
+-- makeProcess prim =
 --   let
---     helper (x:y:z:rest)  = if (x,y) in thing then thing[(x,y)].append(t) else thing[(x,y)] = [t]
+--     countFreq ss = sort ss
 
 -- suck :: [String] -> (PrimitiveModel, ProcessModel) -> (PrimitiveModel, ProcessModel)
 -- suck txt (prim, process) =
