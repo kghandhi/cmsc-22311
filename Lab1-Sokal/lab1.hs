@@ -27,36 +27,33 @@ extractWords :: [Tag String] -> [String]
 extractWords tags = words $ innerText $ harvest $ getBody tags
 
 makePrim :: [String] -> PrimitiveModel
-makePrim txt = helper (empty :: PrimitiveModel) txt
+makePrim txt = specialFold (empty :: PrimitiveModel) txt
   where
-    helper acc (x:y:[]) = acc
-    helper acc (x:y:z:rest) =
-      if member (x,y) acc then helper (adjust (++ [z]) (x,y) acc) (y:z:rest)
-      else helper (insert (x, y) [z] acc) (y:z:rest)
-
-makeFreq :: PrimitiveModel -> Map (String, String) [(Int, String)]
-makeFreq prim = M.map frequency prim
+    specialFold acc (x:y:[]) = acc
+    specialFold acc (x:y:z:rest) =
+      if member (x,y) acc then specialFold (adjust (++ [z]) (x,y) acc) (y:z:rest)
+      else specialFold (insert (x, y) [z] acc) (y:z:rest)
 
 frequency :: Ord a => [a] -> [(Int, a)]
 frequency xs = sortBy (flip $ comparing fst) $
                L.map (\x -> (length x, head x)) (group $ sort xs)
+
+makeFreq :: PrimitiveModel -> Map (String, String) [(Int, String)]
+makeFreq prim = M.map frequency prim
 
 makeProcess :: Map (String, String) [(Int, String)] -> ProcessModel
 makeProcess freq = fst $ mapAccumWithKey mapper [] freq where
   mapper process (x,y) zs =
     ((y, L.map (\(f,z) -> (f, findIndex (y,z) freq)) zs):process, zs)
 
+-- Apparently theres a reverse happening between making the frequency and making
+-- the process model. TODO: fix
 suck :: [String] -> ProcessModel
 suck txt = reverse $ makeProcess $ makeFreq $ makePrim txt
-
 
 main = do
   src <- readFile "urls.txt"
   let urls = lines src
-  -- tags <- foldl (\murl tgs -> (fmap parseTags murl) ++ tgs)  [] (L.map openURL lines)
   tags <- mapM (fmap parseTags . openURL) urls
   let txt = foldl (++) [] (L.map extractWords tags)
-  --tags <- fmap parseTags turls
-  --mapM_ (parseTags . openURL) urls
-  -- tags <- fmap parseTags $ openURL "http://muse.jhu.edu/journals/postmodern_culture/v024/24.1.mickalites.html"
   writeFile "sokal.model" $ unlines (L.map show (suck txt))
