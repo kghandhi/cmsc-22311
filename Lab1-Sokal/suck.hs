@@ -36,11 +36,14 @@ makeFreq :: PrimitiveModel -> FrequencyModel
 makeFreq prim = M.map frequency prim
 
 makeProcess :: FrequencyModel -> ProcessModel
-makeProcess freq = L.map stripFirst $ assocs $ mapWithKey relabel freq
+makeProcess freq = L.map chop $ assocs $ mapWithKey relabel freq
   where
-    stripFirst ((_,y), vs) = (y, vs)
-    relabel (_, y) vs = mapMaybe idxOfPairs vs
-      where idxOfPairs (count, z) = flip (,) count <$> lookupIndex (y, z) freq
+    chop ((_,y), vs) = (y, vs)
+    relabel (_, y) vs =
+      let
+        idxs (c, z) = flip (,) c <$> lookupIndex (y, z) freq
+      in
+       mapMaybe idxs vs
 
 suck :: [String] -> ProcessModel
 suck wds = makeProcess $ makeFreq $ makePrim wds
