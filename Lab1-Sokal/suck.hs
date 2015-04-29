@@ -1,5 +1,5 @@
 import qualified Data.Map as M (map)
-import qualified Data.List as L (map, filter, foldl)
+import qualified Data.List as L (map, filter, foldl, concatMap)
 
 import Data.Map (Map, unionsWith, singleton, mapWithKey, lookupIndex, assocs)
 import Data.List (drop, zip3, takeWhile, head, group, sortBy, sort)
@@ -65,10 +65,19 @@ clean = L.map (L.filter isAscii)
 extractWords :: [Tag String] -> [String]
 extractWords tags = clean $ words $ innerText $ harvest $ getBody tags
 
-main :: IO ()
+-- main :: IO ()
+-- main = do
+--   src <- readFile "urls.txt"
+--   let urls = lines src
+--   tags <- mapM (fmap parseTags . openURL) urls
+--   let wds = L.foldl (++) [] (L.map extractWords tags)
+--   writeFile "sokal.model" $ unlines (L.map show (suck wds))
+
+
 main = do
   src <- readFile "urls.txt"
   let urls = lines src
   tags <- mapM (fmap parseTags . openURL) urls
-  let wds = L.foldl (++) [] (L.map extractWords tags)
-  writeFile "sokal.model" $ unlines (L.map show (suck wds))
+  let wds = L.concatMap extractWords tags
+  --writeFile "sokal.model" $ unlines (L.map show (suck wds))
+  putStr $ unlines $ L.map show $ suck wds
