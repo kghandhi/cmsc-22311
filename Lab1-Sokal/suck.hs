@@ -1,7 +1,7 @@
 import qualified Data.Map as M (map)
 import qualified Data.List as L (map, filter, foldl, concatMap)
 
-import Data.Map (Map, unionsWith, singleton, mapWithKey, lookupIndex, assocs)
+import Data.Map (Map, unionsWith, singleton, mapWithKey, lookupIndex, assocs, empty, insertWith)
 import Data.List (drop, zip3, takeWhile, head, group, sortBy, sort)
 import Data.Maybe (mapMaybe)
 import Data.Ord (comparing)
@@ -23,10 +23,9 @@ makeTrips :: [a] -> [(a, a, a)]
 makeTrips xs = zip3 xs (drop 1 xs) (drop 2 xs)
 
 makePrim :: [String] -> PrimitiveModel
-makePrim wds = unionsWith (++) [singleton (x,y) [z] | (x,y,z) <- makeTrips wds]
-
--- complete :: PrimitiveModel -> PrimitiveModel
--- complete prim = unions [singleton (x,y) [] | <-
+makePrim = L.foldl addAssoc (empty :: PrimitiveModel) . makeTrips
+    where
+          addAssoc acc (x, y, z) = insertWith (++) (x, y) [z] acc
 
 frequency :: Ord a => [a] -> [(Int, a)]
 frequency xs = sortBy (flip $ comparing fst) $
@@ -51,33 +50,20 @@ suck wds = makeProcess $ makeFreq $ makePrim wds
 openURL :: String -> IO String
 openURL url = simpleHTTP (getRequest url) >>= getResponseBody
 
-harvest :: [Tag String] -> [Tag String]
-harvest body =
-  L.foldl (++) [] (sections (~== "<p>") body)
-
 getBody :: [Tag String] -> [Tag String]
 getBody tags =
   takeWhile (~/= "<div id=back>") $ head $ sections (~== "<div id=body>") tags
 
-clean :: [String] -> [String]
-clean = L.map (L.filter isAscii)
+clean :: String -> String
+clean = L.filter isAscii
 
 extractWords :: [Tag String] -> [String]
-extractWords tags = clean $ words $ innerText $ harvest $ getBody tags
+extractWords = words . clean . innerText . getBody
 
--- main :: IO ()
--- main = do
---   src <- readFile "urls.txt"
---   let urls = lines src
---   tags <- mapM (fmap parseTags . openURL) urls
---   let wds = L.foldl (++) [] (L.map extractWords tags)
---   writeFile "sokal.model" $ unlines (L.map show (suck wds))
-
-
+main :: IO ()
 main = do
   src <- readFile "urls.txt"
   let urls = lines src
   tags <- mapM (fmap parseTags . openURL) urls
   let wds = L.concatMap extractWords tags
-  --writeFile "sokal.model" $ unlines (L.map show (suck wds))
-  putStr $ unlines $ L.map show $ suck wds
+  writeFile "sokal.model" $ unlines (L.map show (suck wds))
