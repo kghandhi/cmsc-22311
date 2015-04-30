@@ -8,6 +8,8 @@ import System.Environment (getArgs)
 type FastModel = Array Int (String, [(Int, Int)])
 type RandState = State StdGen
 
+-- https://github.com/kghandhi/cmsc-22311
+
 feed :: String -> FastModel
 feed raw = listArray (0, (length processModel) - 1) processModel
   where processModel = map read $ lines raw
