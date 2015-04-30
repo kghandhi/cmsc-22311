@@ -1,3 +1,5 @@
+module Suck where
+
 import qualified Data.Map as M (map)
 import qualified Data.List as L (map, filter, foldl, concatMap)
 
@@ -38,9 +40,8 @@ makeProcess :: FrequencyModel -> ProcessModel
 makeProcess freq = L.map chop $ assocs $ mapWithKey relabel freq
   where
     chop ((_,y), zs) = (y, zs)
-    relabel (_, y) = mapMaybe $ idxs
-      where
-        idxs (f, z) = (,) f <$> lookupIndex (y, z) freq
+    relabel (_, y) = mapMaybe $ idxs y
+    idxs y (f, z) = (,) f <$> lookupIndex (y, z) freq
 
 suck :: [String] -> ProcessModel
 suck wds = makeProcess $ makeFreq $ makePrim wds
@@ -58,8 +59,8 @@ clean = L.filter isAscii
 extractWords :: [Tag String] -> [String]
 extractWords = words . clean . innerText . getBody
 
-main :: IO ()
-main = do
+doSucking :: IO ()
+doSucking = do
   src <- readFile "urls.txt"
   let urls = lines src
   tags <- mapM (fmap parseTags . openURL) urls
