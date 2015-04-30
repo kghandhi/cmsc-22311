@@ -24,8 +24,8 @@ makeTrips xs = zip3 xs (drop 1 xs) (drop 2 xs)
 
 makePrim :: [String] -> PrimitiveModel
 makePrim = L.foldl addAssoc (empty :: PrimitiveModel) . makeTrips
-    where
-          addAssoc acc (x, y, z) = insertWith (++) (x, y) [z] acc
+  where
+    addAssoc acc (x, y, z) = insertWith (++) (x, y) [z] acc
 
 frequency :: Ord a => [a] -> [(Int, a)]
 frequency xs = sortBy (flip $ comparing fst) $
@@ -37,9 +37,10 @@ makeFreq prim = M.map frequency prim
 makeProcess :: FrequencyModel -> ProcessModel
 makeProcess freq = L.map chop $ assocs $ mapWithKey relabel freq
   where
-    chop ((_,y), vs) = (y, vs)
-    relabel (_, y) vs = mapMaybe $ idxs y
-    idxs (c, z) = flip (,) c <$> lookupIndex (y, z) freq
+    chop ((_,y), zs) = (y, zs)
+    relabel (_, y) = mapMaybe $ idxs
+      where
+        idxs (f, z) = (,) f <$> lookupIndex (y, z) freq
 
 suck :: [String] -> ProcessModel
 suck wds = makeProcess $ makeFreq $ makePrim wds
