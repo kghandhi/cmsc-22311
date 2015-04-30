@@ -19,7 +19,6 @@ type PrimitiveModel = Map (String, String) [String]
 type FrequencyModel = Map (String, String) [(Int, String)]
 type ProcessModel = [(String, [(Int, Int)])]
 
-tester = words "x y z0 x y z1 x y z0 x y z0 x y z1 x y z2 x y z0"
 
 makeTrips :: [a] -> [(a, a, a)]
 makeTrips xs = zip3 xs (drop 1 xs) (drop 2 xs)
@@ -66,3 +65,28 @@ doSucking = do
   tags <- mapM (fmap parseTags . openURL) urls
   let wds = L.concatMap extractWords tags
   writeFile "sokal.model" $ unlines (L.map show (suck wds))
+
+
+tester = words "x y z0 x y z1 x y z0 x y z0 x y z1 x y z2 x y z0"
+{-
+to run:
+$ ghci suck.hs
+*Suck> doSucking
+
+To test:
+$ ghci suck.hs
+*Suck> makePrm tester
+> fromList
+[(("x","y"),["z0","z2","z1","z0","z0","z1","z0"]),(("y","z0"),["x","x","x"]),
+(("y","z1"),["x","x"]),(("y","z2"),["x"]),(("z0","x"),["y","y","y"]),(("z1","x")
+,["y","y"]),(("z2","x"),["y"])]
+
+*Suck> makeFreq $ makePrim tester
+> fromList [(("x","y"),[(4,"z0"),(2,"z1"),(1,"z2")]),(("y","z0"),
+[(3,"x")]),(("y","z1"),[(2,"x")]),(("y","z2"),[(1,"x")]),
+(("z0","x"),[(3,"y")]),(("z1","x"),[(2,"y")]),(("z2","x"),[(1,"y")])]
+
+*Suck> suck tester
+> [("y",[(4,1),(2,2),(1,3)]),("z0",[(3,4)]),("z1",[(2,5)]),("z2",[(1,6)]),
+("x",[(3,0)]),("x",[(2,0)]),("x",[(1,0)])]
+-}
