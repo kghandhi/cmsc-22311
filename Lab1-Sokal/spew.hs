@@ -22,21 +22,29 @@ weighter succs rand = wait succs 0
 
 select :: [(Int, Int)] -> RandState Int
 select succs = fmap (weighter succs) $ state $ randomR (0, sum $ map (fst) succs)
--- -- take a random number between 0 and the sum of the weights
--- if number between
 
-runModel :: FastModel -> Int -> RandState [String]
-runModel fm start = iter start where
-  iter idx = do
-    let (word, succs) = fm ! idx
-    nxt <- select fm succs
-    case inRange (bounds fm) nxt of
-     False -> fmap (word:) $ (state . randomR) (bounds fm) >>= (iter)
-     True -> fmap (word:) $ iter nxt
+runModel :: FastModel -> RandState [String]
+runModel fm = do
+  start <- state.randomR $ bounds fm
+  iter start where
+    iter idx = do
+      let (word, succs) = fm ! idx
+      nxt <- select succs
+      case inRange (bounds fm) nxt of
+       False -> fmap (word:) $ (state . randomR) (bounds fm) >>= (iter)
+       True -> fmap (word:) $ iter nxt
 
 isTerminator :: String -> Bool
 isTerminator s = any (== last s) ['.', '?', '!']
 
+takeEnough :: Int -> [String] -> [String]
+takeEnough need ws = map fst $ takeWhile' notDone $ zip ws [1..]
+  where
+    notDone (w, i) = (i < need) || ((i >= need) && ((not . isTerminator) w))
+    takeWhile' _ [] = []
+    takeWhile' p (x:xs)
+      | p x = x:(takeWhile' p xs)
+      | otherwise = [x]
 
 linefill :: Int -> [String] -> String
 linefill _ [] = "\n"
@@ -46,12 +54,15 @@ linefill n (x:xs) = iter x xs where
         | otherwise                   = iter (x ++ " " ++ y) ys
     iter x [] = x ++ "\n"
 
+getSpewSize :: [String] -> Int
+getSpewSize [] = 10
+getSpewSize (x:xs) = read x
+
 main = do
   args <- getArgs
-  let spewSize = head args
+  let spewSize = getSpewSize args
   raw <- readFile "sokal.model"
   let model = feed raw
   gen <- getStdGen
-  start <- state . randomR $ bounds model
-  let ws = evalState (runModel model start) gen
-  putStr $ linefill 72 $ takeWhile (not isTerminator) ws
+  let ws = evalState (runModel model) gen
+  putStr $ linefill 72 $ takeEnough spewSize ws

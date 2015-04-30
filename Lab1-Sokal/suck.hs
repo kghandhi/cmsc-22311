@@ -1,7 +1,7 @@
 import qualified Data.Map as M (map)
 import qualified Data.List as L (map, filter, foldl, concatMap)
 
-import Data.Map (Map, unionsWith, singleton, mapWithKey, lookupIndex, assocs, empty, insertWith)
+import Data.Map (Map, mapWithKey, lookupIndex, assocs, empty, insertWith)
 import Data.List (drop, zip3, takeWhile, head, group, sortBy, sort)
 import Data.Maybe (mapMaybe)
 import Data.Ord (comparing)
