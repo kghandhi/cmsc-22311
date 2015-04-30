@@ -18,28 +18,25 @@ weighter succs rand = wait succs 0
     wait ((weight, st):rest) acc
       | acc + weight >= rand = st
       | otherwise = wait rest (acc + weight)
-    wait [] acc = acc
+    wait [] acc = -1
 
--- select :: [(Int, Int)] -> RandState Maybe Int
--- select corp = fmap (snd $ corp !!) $ state $ randomR (0, sum $ map (snd) corp)
---   where
---     checkAndWack idx
---       | inRange (bounds corp) idx = Just (snd $ corp !!)
---       | otherwise = Nothing
+select :: [(Int, Int)] -> RandState Int
+select succs = fmap (weighter succs) $ state $ randomR (0, sum $ map (fst) succs)
 -- -- take a random number between 0 and the sum of the weights
 -- if number between
 
--- runModel :: FastModel -> Int -> RandState Int
--- runModel fm start = iter start where
---   iter idx = do
---     let (word, succs) = fm ! idx
---     succ <- select $ snd $ succs
---     case succ of
---      Nothing -> return $ idx
---      Just w -> fmap (idx:) $ iter w
+runModel :: FastModel -> Int -> RandState [String]
+runModel fm start = iter start where
+  iter idx = do
+    let (word, succs) = fm ! idx
+    nxt <- select fm succs
+    case inRange (bounds fm) nxt of
+     False -> fmap (word:) $ (state . randomR) (bounds fm) >>= (iter)
+     True -> fmap (word:) $ iter nxt
 
 isTerminator :: String -> Bool
 isTerminator s = any (== last s) ['.', '?', '!']
+
 
 linefill :: Int -> [String] -> String
 linefill _ [] = "\n"
@@ -54,6 +51,7 @@ main = do
   let spewSize = head args
   raw <- readFile "sokal.model"
   let model = feed raw
-  print $ [model ! 0, model ! 1, model ! 2, model ! 3]
-  -- gen <- getnStdGen
-  -- let ws = evalState (runModel model) gen
+  gen <- getStdGen
+  start <- state . randomR $ bounds model
+  let ws = evalState (runModel model start) gen
+  putStr $ linefill 72 $ takeWhile (not isTerminator) ws
