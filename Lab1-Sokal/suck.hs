@@ -38,11 +38,8 @@ makeProcess :: FrequencyModel -> ProcessModel
 makeProcess freq = L.map chop $ assocs $ mapWithKey relabel freq
   where
     chop ((_,y), vs) = (y, vs)
-    relabel (_, y) vs =
-      let
-        idxs (c, z) = flip (,) c <$> lookupIndex (y, z) freq
-      in
-       mapMaybe idxs vs
+    relabel (_, y) vs = mapMaybe $ idxs y
+    idxs (c, z) = flip (,) c <$> lookupIndex (y, z) freq
 
 suck :: [String] -> ProcessModel
 suck wds = makeProcess $ makeFreq $ makePrim wds
