@@ -17,7 +17,8 @@ cabal-version:       >=1.10
 
 executable Sokal
   main-is: spew.hs
-  other-modules: Suck
+  main-is: suck.hs
+  --other-modules: Suck
   -- other-extensions:
   build-depends:       base >=4.7 && <4.8, HTTP, containers, tagsoup, random, array, mtl
   -- hs-source-dirs:

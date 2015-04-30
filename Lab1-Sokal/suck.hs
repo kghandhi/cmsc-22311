@@ -1,5 +1,3 @@
-module Suck where
-
 import qualified Data.Map as M (map)
 import qualified Data.List as L (map, filter, foldl, concatMap)
 
@@ -58,8 +56,8 @@ clean = L.filter isAscii
 extractWords :: [Tag String] -> [String]
 extractWords = words . clean . innerText . getBody
 
-doSucking :: IO ()
-doSucking = do
+main :: IO ()
+main = do
   src <- readFile "urls.txt"
   let urls = lines src
   tags <- mapM (fmap parseTags . openURL) urls
