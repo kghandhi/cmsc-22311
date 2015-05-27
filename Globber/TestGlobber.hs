@@ -46,5 +46,3 @@ main = hspec $ describe "Testing Globber" $ do
         matchGlob "ab?\\?mno" "abZ?mno" `shouldBe` True
       it "doesn't match wrong escaped character" $
         matchGlob "\\a\\b\\c\\e" "abcd" `shouldBe` False
-
-    -- describe "case: edge cases"
