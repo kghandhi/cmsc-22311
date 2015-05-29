@@ -36,6 +36,7 @@ test-suite test-chat
    ,chat
    ,hspec
    ,QuickCheck > 2.5
+   ,network >= 2.5.0.0
+   ,async
   default-language: Haskell2010
   ghc-options: -Wall
-

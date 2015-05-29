@@ -1,12 +1,13 @@
 -- | CMSC 22311 Lab 2 Chat Server
-module Chat (chat, sendMsg, acceptClient, talk, leave) where
+module Chat (chat, sendMsg, acceptClient, talk, leave, Peers, Client) where
 
-import System.Environment (getEnv)
-import Network
-import System.IO
 import Control.Concurrent (forkFinally)
-import Data.IORef (atomicModifyIORef, newIORef, readIORef, IORef)
 import Data.List (delete)
+import Data.IORef (atomicModifyIORef, newIORef, readIORef, IORef)
+import Network
+import System.Environment (lookupEnv)
+import System.IO
+
 
 type Client = (Int, Handle)
 type Peers = [Client] -- list of active clients
@@ -29,6 +30,7 @@ acceptClient mps sock n = do
   ps <- readIORef mps
   let msg = (show n) ++ " has joined"
   mapM_ (sendMsg msg n) ps
+  hPutStrLn h msg
   _ <- forkFinally (talk new mps) (\_ -> leave mps new)
   return ()
 
@@ -58,6 +60,9 @@ leave mps cli@(n, h) = do
   ps <- readIORef mps
   mapM_ (sendMsg msg n) ps
 
+getPort :: String -> PortID
+getPort port = PortNumber (fromIntegral (read port :: Int))
+
 -- Open a port from the environment variable, create a socket to listen on
 -- initalize the state and then accept each client one at a time and
 -- continue doing so with the mapM over the infinite list
@@ -65,8 +70,11 @@ leave mps cli@(n, h) = do
 -- | Chat server entry point.
 chat :: IO ()
 chat = withSocketsDo $ do
-  port <- getEnv "CHAT_SERVER_PORT"
-  sock <- listenOn (PortNumber (fromIntegral (read port :: Int)))
-  putStrLn $ "Listening on port " ++ port
-  mps <- newIORef ([] :: Peers)
-  mapM_ (acceptClient mps sock) [1..]
+  mport <- lookupEnv "CHAT_SERVER_PORT"
+  case mport of
+   Nothing -> putStrLn "CHAT_SERVER_PORT environment variable not set"
+   Just port -> do
+     sock <- listenOn $ getPort port
+     putStrLn $ "Listening on port " ++ port
+     mps <- newIORef ([] :: Peers)
+     mapM_ (acceptClient mps sock) [1..]
