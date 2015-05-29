@@ -13,4 +13,3 @@ main = hspec $ describe "Testing Lab 2" $ do
   describe "read" $ do
     it "is inverse to show" $ property $
       \x -> (read . show) x == (x :: Int)
-
