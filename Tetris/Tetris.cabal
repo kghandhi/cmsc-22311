@@ -16,7 +16,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 executable Tetris
-  main-is: Tetris.hs
+  main-is: tester.hs
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.7 && <4.8, helm, array, random

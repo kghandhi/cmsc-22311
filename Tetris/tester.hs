@@ -28,14 +28,11 @@ pruneOld now clicks =
     (t, xy):clicks' -> if (now-t) > tfade then []
                        else (t,xy):(pruneOld now clicks')
 
-upstate :: [Update] -> State -> State
-upstate us (now, clicks) =
-  case us of
-    [] ->  (now, clicks)
-    (u:us') ->
-      case u of
-        NewTime t -> (t, (pruneOld t clicks))
-        NewClick (t, xy) -> (t, (t, xy):(pruneOld t clicks))
+upstate :: Update -> State -> State
+upstate u (now, clicks) =
+  case u of
+    NewTime t -> (t, (pruneOld t clicks))
+    NewClick (t, xy) -> (t, (t, xy):(pruneOld t clicks))
 
 setAlpha :: Double -> Color.Color -> Color.Color
 setAlpha a (Color r g b _) = Color.rgba r g b a
@@ -95,10 +92,21 @@ timestamp sig = (,) <~ seq sig time ~~ sig
 clicks :: Signal Click
 clicks = timestamp $ seq Mouse.clicks Mouse.position
 
+merge :: Signal a -> Signal a -> Signal a
+merge sigL sigR =
+  let
+    tsMerge (t1,v1) (t2,v2) =
+        if t1 >= t2
+          then v1
+          else v2
+  in
+    tsMerge <~ timestamp sigL ~~ timestamp sigR
+
 -- state :: Signal State
 -- state = Signal.foldp upstate initState (Signal.combine [NewTime <~ time, NewClick <~ clicks])
 
 main :: IO ()
 main = run defaultConfig $ view <~ Window.dimensions ~~ stepper
   where
-    stepper = Signal.foldp upstate initState (Signal.combine [NewTime <~ time, NewClick <~ clicks])
+    stepper = Signal.foldp upstate initState $
+              merge (NewTime <~ time) (NewClick <~ clicks)
