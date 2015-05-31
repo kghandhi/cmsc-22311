@@ -5,7 +5,6 @@ import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async
 import Control.Exception (bracket)
 import Control.Monad
-import Data.Functor
 import Network
 import System.Environment (setEnv)
 import System.IO
@@ -14,13 +13,13 @@ import Test.Hspec
 import Chat
 
 port :: Int
-port = 1803
+port = 1800
 
 main :: IO ()
 main = withSocketsDo $ do
   setEnv "CHAT_SERVER_PORT" (show port)
   void $ async chat
-  threadDelay 1000
+  threadDelay 10000
   doTests
   return ()
 
@@ -33,10 +32,6 @@ findNewInput h = do
   case ret of
    Just (Right s) -> return (Just s)
    _ -> return Nothing
-
-
--- gotNothing :: Handle -> IO ()
--- gotNothing h = findNewInput h `shouldReturn` Nothing
 
 getInput :: Handle -> IO String
 getInput h = do
@@ -69,9 +64,6 @@ whoSentGoodbye msg = read $ safeHead $ words msg
 whoSentHello :: String -> Int
 whoSentHello = whoSentGoodbye
 
-dyingClient :: (Handle -> IO a) -> IO a
-dyingClient f = bracket addClient hClose f
-
 doTests :: IO ()
 doTests = hspec $ describe "Testing Lab 2" $ do
   describe "Accepting clients onto server with welcome messages" $ do
@@ -81,43 +73,20 @@ doTests = hspec $ describe "Testing Lab 2" $ do
     it "increments client numbers" $ do
       (c2, _) <- testAcceptClient
       c2 `shouldBe` 2
-      threadDelay 2000
       (c3, _) <- testAcceptClient
       c3 `shouldBe` 3
     it "sends out a welcome message" $ do
       (c4, h4) <- testAcceptClient
-      (c5, h5) <- testAcceptClient
-      threadDelay 2000
+      c4 `shouldBe` 4
+      (c5, _) <- testAcceptClient
+      c5 `shouldBe` 5
       msg <- getInput h4
-      putStrLn msg
-      threadDelay 2000
       whoSentHello msg `shouldBe` 5
   describe "Clients can leave with goodbye messages" $ do
     it "sends a goodbye message to all other clients" $ do
-      (c6, h6) <- testAcceptClient
-      threadDelay 2000
-      --c6 `shouldBe` 6
-      (c7, h7) <- testAcceptClient
-      threadDelay 2000
-      (c8, h8) <- testAcceptClient
-      threadDelay 2000
+      (_, h6) <- testAcceptClient
+      (_, _) <- testAcceptClient
+      (_, h8) <- testAcceptClient
       hClose h8
-      threadDelay 4000
-      msg7 <- getInput h7
-      print msg7
-      whoSentGoodbye msg7 `shouldBe` 8
       msg6 <- getInput h6
       whoSentGoodbye msg6 `shouldBe` 8
---   -- describe "Clients can leave with parting messages" $ do
---   --   it "server sends goodbye message" $ dyingClient $ \h -> do
---   --     (whoSentHello <$> getInput h) `shouldReturn` 6
---   --     testAcceptClient `shouldReturn` 7
---   --     (whoSentHello <$> getInput h) `shouldReturn` 7
---   --     (whoSentGoodbye <$> getInput h) `shouldReturn` 7
---   -- messages sent
-
---   -- client ID increments
---   -- client enters is added to peers and sends hello
---   -- client leaves is removed from peers and says bye
---   -- sendMsg sends messages to all but the sender
---   -- clients receive messages when others send them

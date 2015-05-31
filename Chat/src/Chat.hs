@@ -1,13 +1,12 @@
 -- | CMSC 22311 Lab 2 Chat Server
-module Chat (chat, sendMsg, acceptClient, talk, leave, Peers, Client) where
+module Chat (chat) where
 
 import Control.Concurrent (forkFinally)
-import Data.List (delete)
 import Data.IORef (atomicModifyIORef, newIORef, readIORef, IORef)
+import Data.List (delete)
 import Network
 import System.Environment (lookupEnv)
 import System.IO
-
 
 type Client = (Int, Handle)
 type Peers = [Client] -- list of active clients
@@ -20,7 +19,7 @@ sendMsg msg me (you, h) = do
     else return ()
 
 -- Accepts connections, modifies the state to add the new connection
--- relays the "n has joined" message to the server and forks
+-- relays the "n has joined" message to everyone server and forks
 acceptClient :: IORef Peers -> Socket -> Int -> IO ()
 acceptClient mps sock n = do
   (h, _, _) <- accept sock
@@ -43,6 +42,7 @@ talk (n, h) mps = do
       loop = do
         line <- hGetLine h
         case line of
+         -- Because OSX
          ('\EOT':_) -> return ()
          _ -> do
            ps <- readIORef mps
@@ -63,7 +63,8 @@ leave mps cli@(n, h) = do
 getPort :: String -> PortID
 getPort port = PortNumber (fromIntegral (read port :: Int))
 
--- Open a port from the environment variable, create a socket to listen on
+-- Open a port from the environment variable, create a socket to for the
+-- client to listen
 -- initalize the state and then accept each client one at a time and
 -- continue doing so with the mapM over the infinite list
 -- We start at 1 because the first person to enter is called "1"
