@@ -45,52 +45,22 @@ view (w, h) (now, clicks) = G.centeredCollage w h dots
   where
     (fw, fh) = (toNum w, toNum h)
     (dx, dy) = (-fw/2, fh/2)
-    color a = setAlpha a Color.white
+    color a
+      | a <= 1 && a >= 0 = setAlpha a Color.blue
+      | otherwise = Color.blue
     rad pct = 20 + 100 *pct
     circ pct = G.filled (color (1-pct))  (G.circle (rad pct))
     dots = map (\(t,(x,y)) ->
                  let pct = (now-t) / tfade in
-                  G.move (toNum x + dx, toNum (-y) + dy) $ circ pct)
-           clicks
-
--- view :: (Int, Int) -> State -> G.Element
--- view (w, h) (now, clicks) = G.centeredCollage w h dots
---   where
---     (fw, fh) = (toNum w, toNum h)
---     (dx, dy) = (-fw/2, fh/2)
---     color a = setAlpha a Color.white
---     rad pct = 20 + 100 *pct
---     circ pct = G.filled (color (1-pct))  (G.circle (rad pct))
---     dots = map (\(t,(x,y)) ->
---                  let pct = (now-t) / tfade in
---                   G.move (toNum x + dx, toNum (-y) + dy) $ circ pct)
---            clicks
-
-
--- time :: Signal Time.Time
--- time = Signal.foldp (+) 0 (Time.fps 40)
-
--- timestamp :: Signal a -> Signal (Time.Time, a)
--- timestamp sig = (,) <~ seq sig time ~~ sig
-
--- clicks :: Signal Click
--- clicks = timestamp $ seq Mouse.clicks Mouse.position
-
--- state :: Signal State
--- state = Signal.foldp upstate initState (Signal.combine [NewTime <~ time, NewClick <~ clicks])
-
--- main :: IO ()
--- main = run defaultConfig $ view <~ Window.dimensions ~~ state
+                 G.move ((toNum x) + dx, (toNum (-y)) + dy) $ G.group [circ pct, G.toForm $ T.asText (x,y)]) clicks
+                 --G.move (toNum x + dx, toNum (-y) + dy) $ circ pct)
 
 
 time :: Signal Time.Time
 time = Signal.foldp (+) 0 (Time.fps 40)
 
-timestamp :: Signal a -> Signal (Time.Time, a)
-timestamp sig = (,) <~ seq sig time ~~ sig
-
 clicks :: Signal Click
-clicks = timestamp $ seq Mouse.clicks Mouse.position
+clicks = Time.timestamp $ seq Mouse.clicks Mouse.position
 
 merge :: Signal a -> Signal a -> Signal a
 merge sigL sigR =
@@ -100,10 +70,7 @@ merge sigL sigR =
           then v1
           else v2
   in
-    tsMerge <~ timestamp sigL ~~ timestamp sigR
-
--- state :: Signal State
--- state = Signal.foldp upstate initState (Signal.combine [NewTime <~ time, NewClick <~ clicks])
+    tsMerge <~ Time.timestamp sigL ~~ Time.timestamp sigR
 
 main :: IO ()
 main = run defaultConfig $ view <~ Window.dimensions ~~ stepper
