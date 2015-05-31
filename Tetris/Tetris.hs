@@ -1,22 +1,24 @@
 module Tetris where
 
+import FRP.Helm
+import qualified FRP.Helm.Keyboard as Keyboard
 import System.Random (randomRs, mkStdGen)
 import Data.Array (Array, array)
 
-type State = { board :: Board
-             , score :: Int
-             , level :: Int
-             , gameSt :: GameState
-             , randomBag :: [Tetrimino] --next 5
-             , nTetrises :: Int
-             , songChoice :: String
-             , highScore :: Int
-             , tetriminosOnBoard :: [Tetrimino]
-             }
+data State = State { board :: Board
+                   , score :: Int
+                   , level :: Int
+                   , gameSt :: GameState
+                   , randomBag :: [Tetrimino] --next 5
+                   , nTetrises :: Int
+                   , songChoice :: String
+                   , highScore :: Int
+                   , tetriminosOnBoard :: [Tetrimino]
+                   }
 
 data GameState = Start | Loading | Active | Over
 
-data Board = Array Int Cell
+type Board = Array (Int, Int) Cell
 
 -- Proj is a projection of a tetrimino
 data Cell = Wall | Empty | Filled Tetrimino | Proj Tetrimino
@@ -49,13 +51,13 @@ initBoard = array ((0,0), (12,24))
     inside = [((x,y), Empty) | x <- [1,11], y <- [1,24]]
 
 initState :: State
-initState = { board=initBoard
-            , score=0
-            , level=0
-            , gameSt=Loading
-            , randomBag= pickRandomBag 17 5
-            , nTetrises=0
-            , songChoice=""
-            , highScore=0
-            , tetriminosOnBoard = []
-            }
+initState = State { board=initBoard
+                  , score=0
+                  , level=0
+                  , gameSt=Loading
+                  , randomBag= pickRandomBag 17 5
+                  , nTetrises=0
+                  , songChoice=""
+                  , highScore=0
+                  , tetriminosOnBoard = []
+                  }

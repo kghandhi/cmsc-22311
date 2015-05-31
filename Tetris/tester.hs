@@ -44,7 +44,7 @@ toNum :: (Num c, Integral a) => a -> c
 toNum = fromInteger . toInteger
 
 view :: (Int, Int) -> State -> G.Element
-view (w, h) (now1, clicks1) = G.centeredCollage w h dots
+view (w, h) (now, clicks) = G.centeredCollage w h dots
   where
     (fw, fh) = (toNum w, toNum h)
     (dx, dy) = (-fw/2, fh/2)
