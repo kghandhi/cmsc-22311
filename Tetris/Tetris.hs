@@ -1,27 +1,34 @@
 module Tetris where
 
+import Control.Lens
 import FRP.Helm
-import qualified FRP.Helm.Keyboard as Keyboard
+--import qualified FRP.Helm.Keyboard as Keyboard
 import System.Random (randomRs, mkStdGen)
 import Data.Array (Array, array)
 
-data State = State { board :: Board
-                   , score :: Int
-                   , level :: Int
-                   , gameSt :: GameState
-                   , randomBag :: [Tetrimino] --next 5
-                   , nTetrises :: Int
-                   , songChoice :: String
-                   , highScore :: Int
-                   , tetriminosOnBoard :: [Tetrimino]
-                   }
+
+type Location = (Int, Int)
+
+data State = State { _board :: Board
+                   , _falling :: (Tetrimino, Location)
+                   , _score :: Int
+                   , _level :: Int
+                   , _gameSt :: GameState
+                   , _randomBag :: [Tetrimino] --next 5
+                   , _nTetrises :: Int
+                   , _holding :: [Tetrimino] --length at most 1
+                   , _songChoice :: String
+                   , _highScore :: Int
+                   , _tetriminosOnBoard :: [Tetrimino]
+                   } deriving Show
+makeLenses ''State
 
 data GameState = Start | Loading | Active | Over
 
 type Board = Array (Int, Int) Cell
 
--- Proj is a projection of a tetrimino
-data Cell = Wall | Empty | Filled Tetrimino | Proj Tetrimino
+-- The Ghost piece is the shadow
+data Cell = Wall | Empty | Filled Tetrimino | Ghost Tetrimino
 
 -- Should each have an associated color? So it is easy to change the color?
 data Tetrimino = I  -- Cyan 0
@@ -34,30 +41,33 @@ data Tetrimino = I  -- Cyan 0
                deriving (Read, Show, Eq)
 
 -- We should be able to pull a random Tetrimino out of a bag so we need
-pickRandomBag seed sz = map ([I, J, L, O, S, T, Z] !!)
-                        $ take sz
-                        $ randomRs (0,6) (mkStdGen seed)
+-- infinite list
+pickRandomBag seed = map ([I, J, L, O, S, T, Z] !!)
+                     $ randomRs (0,6) (mkStdGen seed)
 
-data Action = KeyAction Keyboard.Key | TimeAction
 
 initBoard :: Board
-initBoard = array ((0,0), (12,24))
+initBoard = array ((0,0), (11,20))
             $ leftBorder ++ rightBorder ++ bottomBorder ++ inside
   where
-    leftBorder = [((0,y), Wall) | y <- [0,24]]
-    rightBorder = [((12,y), Wall) | y <- [0,24]]
-    --topBorder = [((x,24), Wall) | x <- [1,11]]
-    bottomBorder = [((x,0), Wall) | x <- [1,11]]
-    inside = [((x,y), Empty) | x <- [1,11], y <- [1,24]]
+    leftBorder = [((0,y), Wall) | y <- [0,20]]
+    rightBorder = [((12,y), Wall) | y <- [0,20]]
+    bottomBorder = [((x,0), Wall) | x <- [1,10]]
+    inside = [((x,y), Empty) | x <- [1,10], y <- [1,20]]
+
+initBag = pickRandomBag 17
+
+dropPiece :: [Tetrimino] -> (Tetrimino, Location)
+dropPiece ts =
+  case head ts of
+   I -> (I, (4, 20))
+   J -> (J, (4, 19))
+   L -> (L, (4, 19))
+   O -> (O, (5, 19))
+   S -> (S, (4, 19))
+   T -> (T, (4, 19))
+   Z -> (Z, (5, 19))
 
 initState :: State
-initState = State { board=initBoard
-                  , score=0
-                  , level=0
-                  , gameSt=Loading
-                  , randomBag= pickRandomBag 17 5
-                  , nTetrises=0
-                  , songChoice=""
-                  , highScore=0
-                  , tetriminosOnBoard = []
-                  }
+initState = State initBoard (dropPiece $ take 1 initBag) 0 0 Loading
+            (drop 1 initBag) 0 [] "" 0 []
