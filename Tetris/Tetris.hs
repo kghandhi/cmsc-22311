@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes, TemplateHaskell, FlexibleContexts #-}
 module Tetris where
 
 import Control.Lens
@@ -6,29 +7,14 @@ import FRP.Helm
 import System.Random (randomRs, mkStdGen)
 import Data.Array (Array, array)
 
-
 type Location = (Int, Int)
 
-data State = State { _board :: Board
-                   , _falling :: (Tetrimino, Location)
-                   , _score :: Int
-                   , _level :: Int
-                   , _gameSt :: GameState
-                   , _randomBag :: [Tetrimino] --next 5
-                   , _nTetrises :: Int
-                   , _holding :: [Tetrimino] --length at most 1
-                   , _songChoice :: String
-                   , _highScore :: Int
-                   , _tetriminosOnBoard :: [Tetrimino]
-                   } deriving Show
-makeLenses ''State
-
-data GameState = Start | Loading | Active | Over
+data GameState = Start | Loading | Active | Over deriving Show
 
 type Board = Array (Int, Int) Cell
 
 -- The Ghost piece is the shadow
-data Cell = Wall | Empty | Filled Tetrimino | Ghost Tetrimino
+data Cell = Wall | Empty | Filled Tetrimino | Ghost Tetrimino deriving Show
 
 -- Should each have an associated color? So it is easy to change the color?
 data Tetrimino = I  -- Cyan 0
@@ -39,6 +25,21 @@ data Tetrimino = I  -- Cyan 0
                | T  -- Purple 5
                | Z  -- Red 6
                deriving (Read, Show, Eq)
+
+data State = State {
+    _board :: Board
+  , _falling :: (Tetrimino, Location)
+  , _score :: Int
+  , _level :: Int
+  , _gameSt :: GameState
+  , _randomBag :: [Tetrimino] --next 5
+  , _nTetrises :: Int
+  , _holding :: [Tetrimino] --length at most 1
+  , _songChoice :: String
+  , _highScore :: Int
+  , _tetriminosOnBoard :: [Tetrimino]
+  } deriving Show
+makeLenses ''State
 
 -- We should be able to pull a random Tetrimino out of a bag so we need
 -- infinite list
