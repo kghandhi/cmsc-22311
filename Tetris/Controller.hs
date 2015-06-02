@@ -17,11 +17,8 @@ data Action = KeyAction Keyboard.Key | TimeAction
 
 data Direction = Left | Right | Down | Rotate
 
-
--- -- Clear rows that can be cleared, drop piece that is falling if it can drop more
--- CHECK IF GAME OVERgtuy6
 tick :: State -> State
-tick st = clearRows . (advanceFalling Down) st
+tick st = clearRows $ advanceFalling Down st
 
 -- we have only landed if there is a barrier directly below us
 hasLanded :: [Location] -> Board -> Bool
@@ -68,7 +65,7 @@ doMove ps spd b d =
 -- into play
 -- 4. If a new one has landed, add it to the list of those on the board
 advanceFalling :: State -> Direction -> State
-advanceFalling st dir = advanceBag . dropNew . addFallen . showChange
+advanceFalling st dir = advanceBag . dropNew . addFallen . showChangeInFalling
 
 moveFalling :: State -> State
 moveFalling st dir = over falling fallingFn
@@ -86,8 +83,8 @@ moveFalling st dir = over falling fallingFn
        Z ps -> Z (doMove ps spd b dir)
        None -> head (view randomBag st) -- Drop a new one, modify randomBag
 
-showChange :: State -> State
-showChange st = over board modifyBoard
+showChangeInFalling :: State -> State
+showChangeInFalling st = over board modifyBoard
   where
     modifyBoard bd = freeze mbd
       where
@@ -99,7 +96,7 @@ showChange st = over board modifyBoard
           return a
 
 addFallen :: State -> State
-addFallen st = over tetriminosOnBoard checkAndAdd
+addFallen st = over landedTets checkAndAdd
   where
     checkAndAdd tot =
       let f = view falling st in
@@ -197,18 +194,44 @@ newHighScore st = over highScore check
 keyPress :: Keyboard.Key -> State -> State
 keyPress key st =
   case key of
-   SpaceKey -> st -- Drop Hard
-   RightKey -> st -- Move right
-   LeftKey -> st -- Move left
-   DownKey -> st -- Move down
-   UpKey -> st -- rotate clockwise
-   XKey -> st
+   SpaceKey -> set speed 3 st
+   RightKey -> advanceFalling st Right
+   LeftKey -> advanceFalling st Left
+   DownKey -> advanceFalling st Down
+   UpKey -> doRotation st
+   XKey -> doHold st
 -- if length (holding st) == 0 then holding st = [(fst (falling st))] -- holdkey
      -- RKey -> -- restart game
      -- MKey -> -- toggle music
      -- PKey -> -- Pause
      _ -> st
 
+-- X key
+doHold :: State -> State
+doHold st = set holding h' (set falling f' (set randomBag rb'))
+  where
+    h = view holding st
+    f = view falling st
+    rb = view randomBag st
+    (h', f', rb') =
+      case h of
+       [] -> ([f], head rb, tail rb)
+       [held] -> ([f], held, rb)
+       h -> (head h, f, rb)
+
+-- Up key
+isValidRotation :: Tetrimino -> Board -> Bool
+isValidRotation t bd =
+  all (\(x,y) -> not $ isBarrier (x,y) newPs bd) (extractLocs $ rotate t)
+
+makeRotate :: State -> State
+makeRotate st = over falling rotate
+
+doRotation :: State -> State
+doRotation st
+  | isValidRotation (view falling st) (view board st) =
+      showChangeInFalling . makeRotate st -- too lazy now, but need to check if it has fallen :(
+  | otherwise = st
 
 
 upstate :: Action -> State -> State
