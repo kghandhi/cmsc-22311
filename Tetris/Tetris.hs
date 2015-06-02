@@ -5,17 +5,18 @@ import FRP.Helm
 --import qualified FRP.Helm.Keyboard as Keyboard
 import System.Random (randomRs, mkStdGen)
 import Data.Array (Array, array)
-
+-- import Data.Array.ST
+-- import Control.Monad.ST
 
 type Location = (Int, Int)
 
 data State = State { _board :: Board
-                   , _falling :: (Tetrimino, Location)
+                   , _falling :: Tetrimino
+                   , _speed :: Int -- num blocks / tick
                    , _score :: Int
                    , _level :: Int
                    , _gameSt :: GameState
                    , _randomBag :: [Tetrimino] --next 5
-                   , _nTetrises :: Int
                    , _holding :: [Tetrimino] --length at most 1
                    , _songChoice :: String
                    , _highScore :: Int
@@ -25,26 +26,35 @@ makeLenses ''State
 
 data GameState = Start | Loading | Active | Over
 
+-- But well modify it using freeze and thaw
 type Board = Array (Int, Int) Cell
 
 -- The Ghost piece is the shadow
 data Cell = Wall | Empty | Filled Tetrimino | Ghost Tetrimino
 
 -- Should each have an associated color? So it is easy to change the color?
-data Tetrimino = I  -- Cyan 0
-               | J  -- Blue 1
-               | L  -- Orange 2
-               | O  -- Yellow 3
-               | S  -- Green 4
-               | T  -- Purple 5
-               | Z  -- Red 6
+data Tetrimino = I [Location] -- Cyan 0
+               | J [Location] -- Blue 1
+               | L [Location]-- Orange 2
+               | O [Location]-- Yellow 3
+               | S [Location] -- Green 4
+               | T [Location] -- Purple 5
+               | Z [Location] -- Red 6
                deriving (Read, Show, Eq)
 
 -- We should be able to pull a random Tetrimino out of a bag so we need
 -- infinite list
-pickRandomBag seed = map ([I, J, L, O, S, T, Z] !!)
+pickRandomBag seed = map (tets !!)
                      $ randomRs (0,6) (mkStdGen seed)
-
+  where
+    tets = [ I [(4,20), (5,20), (6,20), (7,20)]
+           , J [(4,20), (4,19), (5,19), (6,19)]
+           , L [(4,19), (5,19), (6,19), (6,20)]
+           , O [(5,20), (6,20), (5,19), (6,19)]
+           , S [(4,19), (5,19), (5,20), (6,20)]
+           , T [(4,19), (5,19), (5,20), (6,19)]
+           , Z [(4,20), (5,20), (5,19), (6,19)]
+           ]
 
 initBoard :: Board
 initBoard = array ((0,0), (11,20))
@@ -57,17 +67,9 @@ initBoard = array ((0,0), (11,20))
 
 initBag = pickRandomBag 17
 
-dropPiece :: [Tetrimino] -> (Tetrimino, Location)
-dropPiece ts =
-  case head ts of
-   I -> (I, (4, 20))
-   J -> (J, (4, 19))
-   L -> (L, (4, 19))
-   O -> (O, (5, 19))
-   S -> (S, (4, 19))
-   T -> (T, (4, 19))
-   Z -> (Z, (5, 19))
+safeHead [] = head $ pickRandomBag 19
+safeHead ls = head ls
 
 initState :: State
-initState = State initBoard (dropPiece $ take 1 initBag) 0 0 Loading
-            (drop 1 initBag) 0 [] "" 0 []
+initState = State initBoard (safeHead initBag) 1 0 1 Loading
+            (drop 1 initBag) [] "" 0 []
