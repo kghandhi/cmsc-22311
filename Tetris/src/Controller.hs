@@ -53,7 +53,7 @@ doMove ps spd b dir =
        _ -> (0, 0)
     mapper ps s = any (\(x,y) -> isBarrier (x,y) ps b)
                   (map (\(x,y) -> (x+px*s, y+py*s)) ps)
-    scale = fromJust $ firstTrue map (mapper ps) [1..spd]
+    scale = fromJust $ firstTrue $ map (mapper ps) [1..spd]
     (dx, dy) = (px*scale, py*scale)
   in
    map (\(x,y) -> (x + dx, y + dy)) ps
@@ -67,52 +67,52 @@ doMove ps spd b dir =
 -- into play
 -- 4. If a new one has landed, add it to the list of those on the board
 advanceFalling :: State -> Direction -> State
-advanceFalling st dir = advanceBag . dropNew . addFallen
-                        . showChangeInFalling $ moveFalling st dir
+advanceFalling st dir = (advanceBag . dropNew . addFallen
+                        . showChangeInFalling) $ moveFalling st dir
 
-moveFalling :: State -> State
-moveFalling st dir = over falling fallingFn
+moveFalling :: State -> Direction -> State
+moveFalling st dir = over falling fallingFn st
   where
     spd = view speed st
     bd = view board st
     fallingFn f =
       case f of
-       I ps -> I (doMove ps spd b dir)
-       J ps -> J (doMove ps spd b dir)
-       L ps -> L (doMove ps spd b dir)
-       O ps -> O (doMove ps spd b dir)
-       S ps -> S (doMove ps spd b dir)
-       T ps -> T (doMove ps spd b dir)
-       Z ps -> Z (doMove ps spd b dir)
+       I ps -> I (doMove ps spd bd dir)
+       J ps -> J (doMove ps spd bd dir)
+       L ps -> L (doMove ps spd bd dir)
+       O ps -> O (doMove ps spd bd dir)
+       S ps -> S (doMove ps spd bd dir)
+       T ps -> T (doMove ps spd bd dir)
+       Z ps -> Z (doMove ps spd bd dir)
        None -> head (view randomBag st) -- Drop a new one, modify randomBag
 
 showChangeInFalling :: State -> State
-showChangeInFalling st = over board modifyBoard
+showChangeInFalling st = over board modifyBoard st
   where
     modifyBoard bd = freeze mbd
       where
         t = view falling st
         ps = extractLocs t
-        mbd = runStArray $ do
+        mbd = runSTArray $ do
           a <- thaw bd
           mapM_ (\xy -> writeArray mbd xy (Filled t)) ps
           return a
 
 addFallen :: State -> State
-addFallen st = over landedTets checkAndAdd
+addFallen st = over landedTets checkAndAdd st
   where
     checkAndAdd tot =
       let f = view falling st in
       if hasLanded (extractLocs f) (view board st) then f:tot else tot
 
 dropNew :: State -> State
-dropNew st = over falling drop
+dropNew st = over falling drop st
   where
     b = view board st
     drop f = if hasLanded (extractLocs f) b then None else f
 
 advanceBag :: State -> State
-advanceBag st = over randomBag nextTet
+advanceBag st = over randomBag nextTet st
   where
     nextTet rb =
       case view falling st of
@@ -127,10 +127,12 @@ advanceBag st = over randomBag nextTet
 clearRows :: State -> State
 clearRows st = newHighScore . (updateScore bonus) $ doClear st
   where
+    f = view falling st
+    ps = extractLocs f
     bonus = countRuns (view board st) ps
 
 doClear :: State -> State
-doClear st = over board $ clear 1
+doClear st = over board (clear 1) st
   where
     clear 20 bd = bd
     clear y bd
@@ -145,7 +147,7 @@ deleteRow y bd ps = freeze mbd
       | y + 1 > 20 = writeArray a (x, y) Empty
       | (x, y+1) `elem` ps = writeArray a (x, y) Empty
       | otherwise = writeArray a (x, y) (readArray a (x, y+1))
-    mbd = runSTarray $ do
+    mbd = runSTArray $ do
       a <- thaw bd
       mapM_ (ignoreFalling a) [1..10]
       mapM_ (\x -> writeArray a (x, 20) Empty) [1..10]
@@ -170,7 +172,7 @@ countRuns bd ps = maximum
                   $ map (\y -> rowIsFull y bd ps) [1..20]
 
 updateScore :: Int -> State -> State
-updateScore bonus st = over score lookup
+updateScore bonus st = over score lookup st
   where
     l = view level st
     n = min 4 bonus
@@ -179,7 +181,7 @@ updateScore bonus st = over score lookup
       | otherwise = s
 
 newHighScore :: State -> State
-newHighScore st = over highScore check
+newHighScore st = over highScore check st
   where
     curr = view score st
     check high
@@ -197,13 +199,13 @@ newHighScore st = over highScore check
 keyPress :: Key.Key -> State -> State
 keyPress key st =
   case key of
-   Key.SpaceKey -> over speed $ (\s -> 3)
+   Key.SpaceKey -> (over speed $ (\s -> 3)) st
    Key.RightKey -> advanceFalling st Rgt
    Key.LeftKey -> advanceFalling st Lft
    Key.DownKey -> advanceFalling st Down
    Key.UpKey -> doRotation st
-   Key.XKey -> doHold st
    _ -> st
+   --Key.XKey -> doHold st
 -- if length (holding st) == 0 then holding st = [(fst (falling st))] -- holdkey
      -- RKey -> -- restart game
      -- MKey -> -- toggle music
@@ -211,17 +213,17 @@ keyPress key st =
     -- _ -> st
 
 -- X key
-doHold :: State -> State
-doHold st = set holding h' (set falling f' (set randomBag rb'))
-  where
-    h = view holding st
-    f = view falling st
-    rb = view randomBag st
-    (h', f', rb') =
-      case h of
-       [] -> ([f], head rb, tail rb)
-       [held] -> ([f], held, rb)
-       h -> (head h, f, rb)
+-- doHold :: State -> State
+-- doHold st = set holding h' (set falling f' (set randomBag rb'))
+--   where
+--     h = view holding st
+--     f = view falling st
+--     rb = view randomBag st
+--     (h', f', rb') =
+--       case h of
+--        [] -> ([f], head rb, tail rb)
+--        [held] -> ([f], held, rb)
+--        h -> (head h, f, rb)
 
 -- Up key
 -- We only want the locations that are actually on the board already
@@ -233,13 +235,13 @@ isValidRotation t bd =
   all (\(x,y) -> not $ isBarrier (x,y) (extractLocs t) bd) (extractLocs $ rotate t)
 
 makeRotate :: State -> State
-makeRotate st = over falling rotate
+makeRotate st = over falling rotate st
 
 -- | Same as the case for advanceFalling
 doRotation :: State -> State
 doRotation st
   | isValidRotation (view falling st) (view board st) =
-      advanceBag . dropNew . addFallen . showChangeInFalling . makeRotate st
+      advanceBag . dropNew . addFallen . showChangeInFalling $ makeRotate st
   | otherwise = st
 
 

@@ -2,7 +2,6 @@
 module Tetris where
 
 import Control.Lens
-import FRP.Helm
 import System.Random (randomRs, mkStdGen)
 import Data.Array (Array, array)
 
@@ -11,7 +10,7 @@ type Location = (Int, Int)
 data GameState = Paused | Active | Over deriving Show
 
 -- But well modify it using freeze and thaw
-type Board = Array (Int, Int) Cell
+type Board = Array Location Cell
 
 -- The Ghost piece is the shadow
 data Cell = Wall | Empty | Filled Tetrimino | Ghost Tetrimino deriving Show
@@ -43,16 +42,24 @@ data State = State {
   } deriving Show
 makeLenses ''State
 
+initI :: Tetrimino
 initI = I [(4,20), (5,20), (6,20), (7,20)]
+initJ :: Tetrimino
 initJ = J [(4,20), (4,19), (5,19), (6,19)]
+initL :: Tetrimino
 initL = L [(4,19), (5,19), (6,19), (6,20)]
+initO :: Tetrimino
 initO = O [(5,20), (6,20), (5,19), (6,19)]
+initS :: Tetrimino
 initS = S [(4,19), (5,19), (5,20), (6,20)]
+initT :: Tetrimino
 initT = T [(4,19), (5,19), (5,20), (6,19)]
+initZ :: Tetrimino
 initZ = Z [(4,20), (5,20), (5,19), (6,19)]
 
 -- We should be able to pull a random Tetrimino out of a bag so we need
 -- infinite list
+pickRandomBag :: Int -> [Tetrimino]
 pickRandomBag seed = map (tets !!)
                      $ randomRs (0,6) (mkStdGen seed)
   where
@@ -60,15 +67,17 @@ pickRandomBag seed = map (tets !!)
 
 initBoard :: Board
 initBoard = array ((0,0), (11,20))
-            $ leftBorder ++ rightBorder ++ bottomBorder ++ inside
+            $ leftBorder ++ rightBorder ++ bottomBorder ++ mid
   where
     leftBorder = [((0,y), Wall) | y <- [0,20]]
     rightBorder = [((12,y), Wall) | y <- [0,20]]
     bottomBorder = [((x,0), Wall) | x <- [1,10]]
-    inside = [((x,y), Empty) | x <- [1,10], y <- [1,20]]
+    mid = [((x,y), Empty) | x <- [1,10], y <- [1,20]]
 
+initBag :: [Tetrimino]
 initBag = pickRandomBag 17
 
+safeHead :: [Tetrimino] -> Tetrimino
 safeHead [] = head $ pickRandomBag 19
 safeHead ls = head ls
 
