@@ -76,4 +76,4 @@ main :: IO ()
 main = run defaultConfig $ view <~ Window.dimensions ~~ stepper
   where
     stepper = Signal.foldp upstate initState $
-              merge (NewTime <~ time) (NewClick <~ clicks)
+              merge (NewClick <~ clicks) (NewTime <~ time)
