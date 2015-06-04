@@ -10,15 +10,17 @@ import Data.Array.ST
 import Data.List (group)
 import Data.Maybe (fromJust)
 import Control.Monad.ST
-import FRP.Helm
-import qualified FRP.Helm.Keyboard as Keyboard
+import FRP.Helm hiding (group, rotate)
+import qualified FRP.Helm.Keyboard as Key
 
-data Action = KeyAction Keyboard.Key | TimeAction
+data Action = KeyAction Key.Key | TimeAction
 
-data Direction = Left | Right | Down | Rotate
+-- Because the prelude uses Left and Right, these refer to
+-- Left, Right, Down and Rotate
+data Direction = Lft | Rgt | Down | Rotate
 
 tick :: State -> State
-tick st = clearRows $ advanceFalling Down st
+tick st = clearRows $ advanceFalling st Down
 
 -- we have only landed if there is a barrier directly below us
 hasLanded :: [Location] -> Board -> Bool
@@ -45,8 +47,8 @@ doMove ps spd b dir =
   let
     (px, py) =
       case dir of
-       Left -> (-1, 0)
-       Right -> (1, 0)
+       Lft -> (-1, 0)
+       Rgt -> (1, 0)
        Down -> (0, -1)
        _ -> (0, 0)
     mapper ps s = any (\(x,y) -> isBarrier (x,y) ps b)
@@ -192,20 +194,21 @@ newHighScore st = over highScore check
 -- R key -> Restart the game
 -- M key -> toggle music
 -- P key -> Pause (show menu)
-keyPress :: Keyboard.Key -> State -> State
+keyPress :: Key.Key -> State -> State
 keyPress key st =
   case key of
-   SpaceKey -> set speed 3 st
-   RightKey -> advanceFalling st Right
-   LeftKey -> advanceFalling st Left
-   DownKey -> advanceFalling st Down
-   UpKey -> doRotation st
-   XKey -> doHold st
+   Key.SpaceKey -> over speed $ (\s -> 3)
+   Key.RightKey -> advanceFalling st Rgt
+   Key.LeftKey -> advanceFalling st Lft
+   Key.DownKey -> advanceFalling st Down
+   Key.UpKey -> doRotation st
+   Key.XKey -> doHold st
+   _ -> st
 -- if length (holding st) == 0 then holding st = [(fst (falling st))] -- holdkey
      -- RKey -> -- restart game
      -- MKey -> -- toggle music
      -- PKey -> -- Pause
-     _ -> st
+    -- _ -> st
 
 -- X key
 doHold :: State -> State
