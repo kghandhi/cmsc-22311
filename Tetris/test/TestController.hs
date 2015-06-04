@@ -1,14 +1,32 @@
 module Main (main) where
 
+import Control.Lens
 import Data.Array
 import Test.Hspec
 
-
 import Controller
 import Tetris
+import Utils
 
 main :: IO ()
 main = hspec $ describe "Testing the control operations" $ do
+  describe "test extractLocs, most important fn" $ do
+    let tet1 = I [(1,2)]
+    let tet2 = J [(1,5),(3,4)]
+    let tet3 = L [(5,6),(7,8),(9,10)]
+    let tet4 = O [(0,1),(2,3)]
+    let tet5 = S [(9,1000)]
+    let tet6 = T [(0,12)]
+    let tet7 = Z [(9,1000), (100,7)]
+    let tet8 = None
+    extractLocs tet1 `shouldBe` [(1,2)]
+    extractLocs tet2 `shouldBe` [(1,5),(3,4)]
+    extractLocs tet3 `shouldBe` [(5,6),(7,8),(9,10)]
+    extractLocs tet4 `shouldBe` [(0,1),(2,3)]
+    extractLocs tet5 `shouldBe` [(9,1000)]
+    extractLocs tet6 `shouldBe` [(0,12)]
+    extractLocs tet7 `shouldBe` [(9,1000),(100,7)]
+    extractLocs tet8 `shouldBe` []
   describe "test isBarrier" $ do
     it "should detect walls" $ do
       let locs = [(1,1),(1,2),(1,3),(1,4)]
@@ -69,3 +87,13 @@ main = hspec $ describe "Testing the control operations" $ do
       let btm = [((x,0), Wall) | x <- [1..2]]
       let tnyBd = array ((0,0),(3,5)) (lft ++ rgt ++ btm ++ tet ++ midd ++ friend)
       hasLanded me tnyBd `shouldBe` True
+  describe "Test advanceFalling" $ do
+    let st = initState
+    let t = view falling st
+    let st' = advanceFalling st down
+    let t' = view falling st'
+    let ps' = extractLocs t'
+    it "The new falling piece should have 4 locations" $ do
+      length ps' `shouldBe` 4
+    -- it "Should move the coordinates down 1" $ do
+    --   map (
