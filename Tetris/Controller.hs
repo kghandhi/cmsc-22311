@@ -41,7 +41,7 @@ firstTrue = helper 0
     helper i (b:bs') = if b then Just i else helper (i+1) bs'
 
 doMove :: [Location] -> Int -> Board -> Direction -> [Location]
-doMove ps spd b d =
+doMove ps spd b dir =
   let
     (px, py) =
       case dir of
@@ -65,7 +65,8 @@ doMove ps spd b d =
 -- into play
 -- 4. If a new one has landed, add it to the list of those on the board
 advanceFalling :: State -> Direction -> State
-advanceFalling st dir = advanceBag . dropNew . addFallen . showChangeInFalling
+advanceFalling st dir = advanceBag . dropNew . addFallen
+                        . showChangeInFalling $ moveFalling st dir
 
 moveFalling :: State -> State
 moveFalling st dir = over falling fallingFn
@@ -220,17 +221,22 @@ doHold st = set holding h' (set falling f' (set randomBag rb'))
        h -> (head h, f, rb)
 
 -- Up key
+-- We only want the locations that are actually on the board already
+-- the initial points of the falling tet are on the board so a point
+-- is a barrier if it is a wall or a tetrimino other than the original
+-- copy of the one that is falling.
 isValidRotation :: Tetrimino -> Board -> Bool
 isValidRotation t bd =
-  all (\(x,y) -> not $ isBarrier (x,y) newPs bd) (extractLocs $ rotate t)
+  all (\(x,y) -> not $ isBarrier (x,y) (extractLocs t) bd) (extractLocs $ rotate t)
 
 makeRotate :: State -> State
 makeRotate st = over falling rotate
 
+-- | Same as the case for advanceFalling
 doRotation :: State -> State
 doRotation st
   | isValidRotation (view falling st) (view board st) =
-      showChangeInFalling . makeRotate st -- too lazy now, but need to check if it has fallen :(
+      advanceBag . dropNew . addFallen . showChangeInFalling . makeRotate st
   | otherwise = st
 
 
