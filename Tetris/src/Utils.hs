@@ -45,8 +45,13 @@ turnBack c fs = map (\(x,y) -> ((floor $ x + c), (floor $ y + c))) fs
 -- | Must be a full, 4 box tet
 rotate :: Tetrimino -> Tetrimino
 rotate t =
-  let
-    ps = extractLocs t
-    c = findCenter ps
-  in
-   turnBack c $ map (\(x,y) -> (y, -x)) $ normalize c ps
+  let doForT c ps = turnBack c $ map (\(x,y)->(y,-x)) $ normalize c ps in
+  case t of
+    I ps -> I (doForT (findCenter ps) ps)
+    J ps -> J (doForT (findCenter ps) ps)
+    L ps -> L (doForT (findCenter ps) ps)
+    O ps -> O (doForT (findCenter ps) ps)
+    S ps -> S (doForT (findCenter ps) ps)
+    T ps -> T (doForT (findCenter ps) ps)
+    Z ps -> Z (doForT (findCenter ps) ps)
+    None -> None
