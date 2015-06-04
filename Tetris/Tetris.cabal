@@ -3,10 +3,10 @@
 
 name:                Tetris
 version:             0.1.0.0
--- synopsis:
+synopsis:            Implementation of Tetris
 -- description:
 -- license:
-license-file:        LICENSE
+-- license-file:        LICENSE
 author:              Kira Ghandhi
 maintainer:          kghandhi@uchicago.edu
 -- copyright:
@@ -15,10 +15,32 @@ build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10
 
+library
+    hs-source-dirs: src
+    exposed-modules: Tetris, Model, Controller, Utils, Score
+    build-depends: base >= 4.7 && <4.8
+                   , helm
+                   , array
+                   , random
+                   , lens
+    default-language: Haskell2010
+    ghc-options: -Wall
+
 executable Tetris
-  main-is: Main.hs
+  main-is: tester.hs
   -- other-modules:
   -- other-extensions:
-  build-depends:       base >=4.7 && <4.8, helm, Tetris, Controller, Model, Utils, Score, array, random, lens
+  build-depends:       base >=4.7 && <4.8
+                       , helm
+                       , Tetris
   -- hs-source-dirs:
-  default-language:    Haskell2010
+--  default-language:    Haskell2010
+
+test-suite test-tetris
+    hs-source-dirs: test
+    main-is: TestController.hs
+    type: exitcode-stdio-1.0
+    build-depends: base >= 4.7 && <4.8
+                   , hspec
+    default-language: Haskell2010
+    ghc-options: -Wall
