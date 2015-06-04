@@ -30,6 +30,7 @@ data Tetrimino = I [Location] -- Cyan 0
 data State = State {
     _board :: Board
   , _falling :: Tetrimino
+  , _speed :: Int
   , _lockDelay :: Float
   , _score :: Int
   , _level :: Int
@@ -72,5 +73,5 @@ safeHead [] = head $ pickRandomBag 19
 safeHead ls = head ls
 
 initState :: State
-initState = State initBoard (safeHead initBag) 0.6 0 1 Active
+initState = State initBoard (safeHead initBag) 1 0.6 0 1 Active
             (drop 1 initBag) [] "" 0 []
