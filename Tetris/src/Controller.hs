@@ -5,12 +5,13 @@ import Score (scores)
 import Utils
 
 import Control.Lens
+--import Control.Monad ((>>=))
 import Data.Array
 import Data.Array.ST
 import Data.List (group)
 import Data.Maybe (fromJust)
-import Control.Monad.ST
-import FRP.Helm hiding (group, rotate)
+--import Control.Monad.ST
+--import FRP.Helm hiding (group, rotate)
 import qualified FRP.Helm.Keyboard as Key
 
 data Action = KeyAction Key.Key | TimeAction
@@ -51,8 +52,8 @@ doMove ps spd b dir =
        Rgt -> (1, 0)
        Down -> (0, -1)
        _ -> (0, 0)
-    mapper ps s = any (\(x,y) -> isBarrier (x,y) ps b)
-                  (map (\(x,y) -> (x+px*s, y+py*s)) ps)
+    mapper points s = any (\(x,y) -> isBarrier (x,y) points b)
+                  (map (\(x,y) -> (x+px*s, y+py*s)) points)
     scale = fromJust $ firstTrue $ map (mapper ps) [1..spd]
     (dx, dy) = (px*scale, py*scale)
   in
@@ -89,13 +90,13 @@ moveFalling st dir = over falling fallingFn st
 showChangeInFalling :: State -> State
 showChangeInFalling st = over board modifyBoard st
   where
-    modifyBoard bd = freeze mbd
+    modifyBoard bd = mbd
       where
         t = view falling st
         ps = extractLocs t
         mbd = runSTArray $ do
           a <- thaw bd
-          mapM_ (\xy -> writeArray mbd xy (Filled t)) ps
+          mapM_ (\xy -> writeArray a xy (Filled t)) ps
           return a
 
 addFallen :: State -> State
@@ -106,10 +107,10 @@ addFallen st = over landedTets checkAndAdd st
       if hasLanded (extractLocs f) (view board st) then f:tot else tot
 
 dropNew :: State -> State
-dropNew st = over falling drop st
+dropNew st = over falling dropIt st
   where
     b = view board st
-    drop f = if hasLanded (extractLocs f) b then None else f
+    dropIt f = if hasLanded (extractLocs f) b then None else f
 
 advanceBag :: State -> State
 advanceBag st = over randomBag nextTet st
@@ -141,12 +142,12 @@ doClear st = over board (clear 1) st
     ps = extractLocs $ view falling st
 
 deleteRow :: Int -> Board -> [Location] -> Board
-deleteRow y bd ps = freeze mbd
+deleteRow y bd ps = mbd
   where
     ignoreFalling a x
       | y + 1 > 20 = writeArray a (x, y) Empty
       | (x, y+1) `elem` ps = writeArray a (x, y) Empty
-      | otherwise = writeArray a (x, y) (readArray a (x, y+1))
+      | otherwise = (readArray a (x, y+1)) >>= (\v -> writeArray a (x, y) v)
     mbd = runSTArray $ do
       a <- thaw bd
       mapM_ (ignoreFalling a) [1..10]
@@ -172,11 +173,11 @@ countRuns bd ps = maximum
                   $ map (\y -> rowIsFull y bd ps) [1..20]
 
 updateScore :: Int -> State -> State
-updateScore bonus st = over score lookup st
+updateScore bonus st = over score lookItUp st
   where
     l = view level st
     n = min 4 bonus
-    lookup s
+    lookItUp s
       | n > 0 = s + (scores ! (l, n))
       | otherwise = s
 
@@ -199,7 +200,7 @@ newHighScore st = over highScore check st
 keyPress :: Key.Key -> State -> State
 keyPress key st =
   case key of
-   Key.SpaceKey -> (over speed $ (\s -> 3)) st
+   Key.SpaceKey -> (over speed $ (\_ -> 3)) st
    Key.RightKey -> advanceFalling st Rgt
    Key.LeftKey -> advanceFalling st Lft
    Key.DownKey -> advanceFalling st Down
