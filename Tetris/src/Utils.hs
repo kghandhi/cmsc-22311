@@ -1,5 +1,7 @@
 module Utils where
 
+import Data.Array
+
 import Tetris
 
 -- Since this is often necessary when we don't care about what type of
@@ -15,6 +17,11 @@ extractLocs t =
    T ps -> ps
    Z ps -> ps
    _ -> []
+
+inBoard :: Board -> Location -> Bool
+inBoard bd (x,y) = x <= xmax && y <= ymax
+  where
+    (_, (xmax, ymax)) = bounds bd
 
 findCenter :: [Location] -> Float
 findCenter ps =

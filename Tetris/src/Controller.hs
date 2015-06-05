@@ -24,16 +24,19 @@ tick :: State -> State
 tick st = clearRows $ advanceFalling st Down
 
 -- we have only landed if there is a barrier directly below us
+-- Since all tetriminos must be at or above 1, this will never be out of bounds
 hasLanded :: [Location] -> Board -> Bool
 hasLanded ps b = any (\(x,y) -> isBarrier (x,y-1) ps b) ps
 
 -- ps is the points in a tetrimino
 isBarrier :: Location -> [Location] -> Board -> Bool
-isBarrier (x, y) ps b =
-  case b ! (x, y) of
-   Wall -> True
-   Filled _ -> not $ (x, y) `elem` ps
-   _ -> False
+isBarrier (x, y) ps b
+  | inBoard (x,y) b =
+    case b ! (x, y) of
+     Wall -> True
+     Filled _ -> not $ (x, y) `elem` ps
+     _ -> False
+  | otherwise -> True
 
 -- Index (starting at 1) of the first true. We start at 0 because we want the
 -- last index before true
@@ -52,8 +55,9 @@ doMove ps spd b dir =
        Rgt -> (1, 0)
        Down -> (0, -1)
        _ -> (0, 0)
-    mapper points s = any (\(x,y) -> isBarrier (x,y) points b)
-                  (map (\(x,y) -> (x+px*s, y+py*s)) points)
+    mapper points s = any (\(x,y) -> isBarrier (x, y) points b)
+                      (map (\(x,y) -> (x+px*s, y+py*s)) points)
+    -- For here, we must hit a barrier before going out of the array (based on speed)
     scale = fromJust $ firstTrue $ map (mapper ps) [1..spd]
     (dx, dy) = (px*scale, py*scale)
   in
@@ -157,11 +161,13 @@ deleteRow y bd ps = mbd
 rowIsFull :: Int -> Board -> [Location] -> Bool
 rowIsFull y bd ps =
   let
-    cellIsFull x =
-      case bd ! (x,y) of
-       Empty -> False
-       Filled _ -> not $ (x, y) `elem` ps
-       _ -> False
+    cellIsFull x
+      | inBoard bd (x,y) =
+        case bd ! (x,y) of
+         Empty -> False
+         Filled _ -> not $ (x, y) `elem` ps
+         _ -> False
+      | otherwise = False
   in
    all cellIsFull [1..10]
 
@@ -175,7 +181,7 @@ countRuns bd ps = maximum
 updateScore :: Int -> State -> State
 updateScore bonus st = over score lookItUp st
   where
-    l = view level st
+    l = min (view level st) 100
     n = min 4 bonus
     lookItUp s
       | n > 0 = s + (scores ! (l, n))
