@@ -8,9 +8,6 @@ import qualified FRP.Helm.Color as C
 import Tetris
 import Controller
 
-cyan :: C.Color
-cyan = C.rgb 0 255 255
-
 orange :: C.Color
 orange = C.rgb 255 165 0
 
@@ -19,7 +16,7 @@ background w h =
   G.filled C.black $ G.rect w h
 
 blockOfI :: Double -> G.Form
-blockOfI r = G.filled cyan $ G.square r
+blockOfI r = G.filled C.cyan $ G.square r
 
 blockOfJ :: Double -> G.Form
 blockOfJ r = G.filled C.blue $ G.square r

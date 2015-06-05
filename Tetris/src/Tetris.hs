@@ -13,7 +13,8 @@ data GameState = Paused | Active | Over deriving Show
 type Board = Array Location Cell
 
 -- The Ghost piece is the shadow
-data Cell = Wall | Empty | Filled Tetrimino | Ghost Tetrimino deriving Show
+data Cell = Wall | Empty | Filled Tetrimino | Ghost Tetrimino
+          deriving (Show, Eq)
 
 -- Should each have an associated color? So it is easy to change the color?
 data Tetrimino = I [Location] -- Cyan 0

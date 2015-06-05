@@ -1,12 +1,12 @@
 module View where
 
-import FRP.Helm
+import qualified Control.Lens as Lens
+import Data.Array
 import qualified FRP.Helm.Graphics as G
-import qualified FRP.Helm.Window as W
 import qualified FRP.Helm.Text as T
 
 import Tetris
-import Controller
+--import Controller
 import Model
 import Utils
 
@@ -31,8 +31,8 @@ buildBoard :: Board -> Int -> [G.Form]
 buildBoard bd bSide =
   let
     -- the forms already built and where we are in x and y
-    buildRow y = (foldl (\acc x -> (G.move ((toNum x) * bSide, (toNum y) * bSide)
-                                  $ cellToForm (b ! (x,y)) bSide):acc) [] [0..11])
+    buildRow y = (foldl (\acc x -> (G.move (toNum (x * bSide), toNum (y * bSide))
+                                  $ cellToForm (bd ! (x,y)) (toNum bSide)):acc) [] [0..11])
   in
    foldl (\acc y -> (buildRow y) ++ acc) [] [0..20]
 
@@ -41,12 +41,12 @@ view :: (Int, Int) -> State -> G.Element
 view (w,h) st =
   let
     bSide = h `div` 25
-    score = T.toText $ "SCORE: " ++ (show $ view score st)
+    intScr = Lens.view score st
+    currScore =  G.toForm . T.asText $ "SCORE: " ++ (show intScr)
     -- Maybe do some magic about where to start building
-    board = buildBoard (view board st) bSide
+    currBoard = buildBoard (Lens.view board st) bSide
   in
-   G.centeredCollage w h [
+   G.centeredCollage w h (currBoard ++ [
      background (toNum w) (toNum h)
-     , board
-     , score
-     ]
+     , currScore
+     ])

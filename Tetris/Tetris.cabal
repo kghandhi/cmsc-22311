@@ -17,7 +17,7 @@ cabal-version:       >=1.10
 
 library
     hs-source-dirs: src
-    exposed-modules: Tetris, Model, Controller, Utils, Score
+    exposed-modules: Tetris, Model, View, Controller, Utils, Score
     build-depends: base >= 4.7 && <4.8
                    , helm
                    , array
