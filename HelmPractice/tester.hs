@@ -9,6 +9,7 @@ import qualified FRP.Helm.Window as Window
 import qualified FRP.Helm.Color as Color
 import qualified FRP.Helm.Mouse as Mouse
 import qualified FRP.Helm.Graphics as G
+import Control.Applicative
 
 import Data.List
 
@@ -60,7 +61,7 @@ time :: Signal Time.Time
 time = Signal.foldp (+) 0 (Time.fps 40)
 
 clicks :: Signal Click
-clicks = Time.timestamp $ seq Mouse.clicks Mouse.position
+clicks = Time.timestamp $ Mouse.clicks *> Mouse.position
 
 merge :: Signal a -> Signal a -> Signal a
 merge sigL sigR =
@@ -76,4 +77,4 @@ main :: IO ()
 main = run defaultConfig $ view <~ Window.dimensions ~~ stepper
   where
     stepper = Signal.foldp upstate initState $
-              merge (NewClick <~ clicks) (NewTime <~ time)
+              merge (NewTime <~ time) (NewClick <~ clicks)

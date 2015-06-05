@@ -118,3 +118,17 @@ main = hspec $ describe "Testing the control operations" $ do
     it "The new falling piece should have 4 locations" $ do
       length (extractLocs t) `shouldBe` 4
       length ps' `shouldBe` 4
+  describe "Test the board is modified" $ do
+    let st = initState
+    let t = view falling st
+    let bd = view board st
+    let st' = advanceFalling st Down
+    let bd' = view board st'
+    let t' = view falling st'
+    it "changes the board" $ do
+      bd == bd' `shouldBe` False
+      (extractLocs t) == (extractLocs t') `shouldBe` False
+    it "adds the tet's new positions to the board" $ do
+      let ps = extractLocs t'
+      all (\xy -> (bd' ! xy) == (Filled t')) ps `shouldBe` True
+      all (\xy -> (bd ! xy) == (Filled t')) ps `shouldBe` False
