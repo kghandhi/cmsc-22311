@@ -7,6 +7,7 @@ import FRP.Helm.Signal
 import FRP.Helm.Keyboard
 
 import Controller
+import Tetris
 import View
 
 merge :: Signal a -> Signal a -> Signal a
@@ -19,15 +20,14 @@ merge s1 s2 =
    tsMerge <~ timestamp s1 ~~ timestamp s2
 
 
-(Time -> b -> b) -> b -> Signal Time -> singal b
+--(Time -> b -> b) -> b -> Signal Time -> singal b
 actions :: Signal Action
 actions = merge (lift (\ks -> KeyAction (head ks)) keysDown)
-          (foldp (\_ -> TimeAction) (TimeAction) (fps 40))
+          (foldp (\_ _-> TimeAction) (TimeAction) (fps 40))
 
 currState :: Signal State
 currState = foldp upstate initState actions
 
 main :: IO ()
 main = do
-  engine <- startup defaultConfig
-  run engine $ view <~ Window.dimensions ~~ currState
+  run defaultConfig $ view <~ Window.dimensions ~~ currState
