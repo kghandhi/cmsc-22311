@@ -88,6 +88,17 @@ main = hspec $ describe "Testing the control operations" $ do
       let btm = [((x,0), Wall) | x <- [1..2]]
       let tnyBd = array ((0,0),(3,5)) (lft ++ rgt ++ btm ++ tet ++ midd ++ friend)
       hasLanded me tnyBd `shouldBe` True
+  descibe "Test moveFalling" $ do
+    let st = initState
+    let t = view falling st
+    let st' = moveFalling st Down
+    let t' = view falling st'
+    let ps' = extractLocs t'
+    it "Has 4 locations before and after" $ do
+      length (extractLocs t) `shouldBe` 4
+      length ps' `shouldBe` 4
+    it "Is one farther down in y" $ do
+      mapM_  (\((x0,y0), (x1,y1)) -> (x1 == x0) && (y0 + 1 == y1)) (zip ps ps')
   describe "Test advanceFalling" $ do
     let st = initState
     let t = view falling st
