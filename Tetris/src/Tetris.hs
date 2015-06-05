@@ -69,10 +69,10 @@ initBoard :: Board
 initBoard = array ((0,0), (11,20))
             $ leftBorder ++ rightBorder ++ bottomBorder ++ mid
   where
-    leftBorder = [((0,y), Wall) | y <- [0,20]]
-    rightBorder = [((12,y), Wall) | y <- [0,20]]
-    bottomBorder = [((x,0), Wall) | x <- [1,10]]
-    mid = [((x,y), Empty) | x <- [1,10], y <- [1,20]]
+    leftBorder = [((0,y), Wall) | y <- [0..20]]
+    rightBorder = [((11,y), Wall) | y <- [0..20]]
+    bottomBorder = [((x,0), Wall) | x <- [1..10]]
+    mid = [((x,y), Empty) | x <- [1..10], y <- [1..20]]
 
 initBag :: [Tetrimino]
 initBag = pickRandomBag 17

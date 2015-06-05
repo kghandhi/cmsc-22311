@@ -58,7 +58,11 @@ doMove ps spd b dir =
     mapper points s = any (\(x,y) -> isBarrier (x, y) points b)
                       (map (\(x,y) -> (x+px*s, y+py*s)) points)
     -- For here, we must hit a barrier before going out of the array (based on speed)
-    scale = fromJust $ firstTrue $ map (mapper ps) [1..spd]
+    mscale = firstTrue $ map (mapper ps) [1..spd]
+    scale =
+      case mscale of
+        Just sc -> sc
+        Nothing -> spd -- if its not going to hit a wall at all
     (dx, dy) = (px*scale, py*scale)
   in
    map (\(x,y) -> (x + dx, y + dy)) ps

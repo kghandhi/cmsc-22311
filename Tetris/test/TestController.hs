@@ -88,17 +88,27 @@ main = hspec $ describe "Testing the control operations" $ do
       let btm = [((x,0), Wall) | x <- [1..2]]
       let tnyBd = array ((0,0),(3,5)) (lft ++ rgt ++ btm ++ tet ++ midd ++ friend)
       hasLanded me tnyBd `shouldBe` True
-  descibe "Test moveFalling" $ do
+  describe "Test moveFalling" $ do
     let st = initState
     let t = view falling st
+    let ps = extractLocs t
     let st' = moveFalling st Down
     let t' = view falling st'
     let ps' = extractLocs t'
     it "Has 4 locations before and after" $ do
-      length (extractLocs t) `shouldBe` 4
+      length ps `shouldBe` 4
       length ps' `shouldBe` 4
     it "Is one farther down in y" $ do
-      mapM_  (\((x0,y0), (x1,y1)) -> (x1 == x0) && (y0 + 1 == y1)) (zip ps ps')
+      --putStrLn $ show ps'
+      ps == ps' `shouldBe` False
+      ps == (map (\(x,y) -> (x,y+1)) ps') `shouldBe` True
+     -- `shouldBe` True
+    it "can move right" $ do
+      let stR = moveFalling st Rgt
+      let tR = view falling stR
+      let psR = extractLocs tR
+      ps == psR `shouldBe` False
+      ps == (map (\(x,y) -> (x-1,y)) psR) `shouldBe` True
   describe "Test advanceFalling" $ do
     let st = initState
     let t = view falling st
@@ -108,5 +118,3 @@ main = hspec $ describe "Testing the control operations" $ do
     it "The new falling piece should have 4 locations" $ do
       length (extractLocs t) `shouldBe` 4
       length ps' `shouldBe` 4
-    -- it "Should move the coordinates down 1" $ do
-    --   map (
