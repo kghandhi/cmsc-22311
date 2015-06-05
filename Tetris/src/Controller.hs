@@ -199,6 +199,14 @@ newHighScore st = over highScore check st
       | curr > high = curr
       | otherwise = high
 
+didFail :: Board -> Bool
+didFail bd = any (\x -> Empty /= (bd ! (x,20))) [1..11]
+
+gameOver :: State -> State
+gameOver st
+  | didFail (view board st) = initState -- In the future handle this better
+  | otherwise = st
+
 -- | keyPress : handles user key press
 -- Space -> Drop hard
 -- Right/Left/Down Key -> Move one right/left/down
@@ -259,5 +267,5 @@ doRotation st
 upstate :: Action -> State -> State
 upstate action oldSt =
   case action of
-   KeyAction key -> keyPress key oldSt
-   TimeAction -> tick oldSt
+   KeyAction key -> gameOver $ keyPress key oldSt
+   TimeAction -> gameOver $ tick oldSt
