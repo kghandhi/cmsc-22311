@@ -31,12 +31,12 @@ hasLanded ps b = any (\(x,y) -> isBarrier (x,y-1) ps b) ps
 -- ps is the points in a tetrimino
 isBarrier :: Location -> [Location] -> Board -> Bool
 isBarrier (x, y) ps b
-  | inBoard (x,y) b =
+  | inBoard b (x,y)=
     case b ! (x, y) of
      Wall -> True
      Filled _ -> not $ (x, y) `elem` ps
      _ -> False
-  | otherwise -> True
+  | otherwise = True
 
 -- Index (starting at 1) of the first true. We start at 0 because we want the
 -- last index before true

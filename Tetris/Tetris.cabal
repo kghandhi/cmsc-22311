@@ -43,6 +43,7 @@ test-suite test-tetris
     build-depends: base >= 4.7 && <4.8
                    , hspec
                    , array
+                   , lens
                    , Tetris
 --                   , Controller
     default-language: Haskell2010
