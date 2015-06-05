@@ -51,8 +51,8 @@ doMove ps spd b dir =
   let
     (px, py) =
       case dir of
-       Lft -> (-1, 0)
-       Rgt -> (1, 0)
+       Lft -> (1, 0)
+       Rgt -> (-1, 0)
        Down -> (0, -1)
        _ -> (0, 0)
     mapper points s = any (\(x,y) -> isBarrier (x, y) points b)
@@ -77,7 +77,9 @@ doMove ps spd b dir =
 -- 4. If a new one has landed, add it to the list of those on the board
 advanceFalling :: State -> Direction -> State
 advanceFalling st dir = (advanceBag . dropNew . addFallen
-                        . showChangeInFalling) $ moveFalling st dir
+                        . (showChangeInFalling ps)) $ moveFalling st dir
+  where
+    ps = extractLocs $ view falling st
 
 moveFalling :: State -> Direction -> State
 moveFalling st dir = over falling fallingFn st
@@ -95,8 +97,8 @@ moveFalling st dir = over falling fallingFn st
        Z ps -> Z (doMove ps spd bd dir)
        None -> head (view randomBag st) -- Drop a new one, modify randomBag
 
-showChangeInFalling :: State -> State
-showChangeInFalling st = over board modifyBoard st
+showChangeInFalling :: [Location] -> State -> State
+showChangeInFalling oldps st = over board modifyBoard st
   where
     modifyBoard bd = mbd
       where
@@ -105,6 +107,9 @@ showChangeInFalling st = over board modifyBoard st
         mbd = runSTArray $ do
           a <- thaw bd
           mapM_ (\xy -> writeArray a xy (Filled t)) ps
+          mapM_ (\xy -> if not $ xy `elem` ps
+                        then writeArray a xy Empty
+                        else return ()) oldps
           return a
 
 addFallen :: State -> State
@@ -199,12 +204,13 @@ newHighScore st = over highScore check st
       | curr > high = curr
       | otherwise = high
 
-didFail :: Board -> Bool
-didFail bd = any (\x -> Empty /= (bd ! (x,20))) [1..11]
+didFail :: Board -> [Location] -> Bool
+didFail bd ps = any (\x -> if (x,20) `elem` ps then False
+                        else  Empty /= (bd ! (x,20))) [1..11]
 
 gameOver :: State -> State
 gameOver st
-  | didFail (view board st) = initState -- In the future handle this better
+  | didFail (view board st) (extractLocs $ view falling st) = initState
   | otherwise = st
 
 -- | keyPress : handles user key press
@@ -260,12 +266,15 @@ makeRotate st = over falling rotate st
 doRotation :: State -> State
 doRotation st
   | isValidRotation (view falling st) (view board st) =
-      advanceBag . dropNew . addFallen . showChangeInFalling $ makeRotate st
+      advanceBag
+      . dropNew
+      . addFallen
+      . (showChangeInFalling (extractLocs $ view falling st))
+      $ makeRotate st
   | otherwise = st
-
 
 upstate :: Action -> State -> State
 upstate action oldSt =
   case action of
-   KeyAction key -> gameOver $ keyPress key oldSt
-   TimeAction -> gameOver $ tick oldSt
+   KeyAction key -> keyPress key oldSt
+   TimeAction -> tick oldSt

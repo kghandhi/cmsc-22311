@@ -9,7 +9,7 @@ import Tetris
 import Controller
 
 orange :: C.Color
-orange = C.rgb 255 165 0
+orange = C.rgb 1 0.647 0
 
 background :: Double -> Double -> G.Form
 background w h =
