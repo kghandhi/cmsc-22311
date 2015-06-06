@@ -9,7 +9,7 @@ import Control.Lens
 import Data.Array
 import Data.Array.ST
 import Data.List (group)
-import Data.Maybe (fromJust)
+--import Data.Maybe (fromJust)
 --import Control.Monad.ST
 --import FRP.Helm hiding (group, rotate)
 import qualified FRP.Helm.Keyboard as Key
@@ -76,7 +76,7 @@ doMove ps spd b dir =
 -- into play
 -- 4. If a new one has landed, add it to the list of those on the board
 advanceFalling :: State -> Direction -> State
-advanceFalling st dir = (advanceBag . dropNew . addFallen
+advanceFalling st dir = (advanceBag . resetSpeed . dropNew . addFallen
                         . (showChangeInFalling ps)) $ moveFalling st dir
   where
     ps = extractLocs $ view falling st
@@ -106,9 +106,13 @@ showChangeInFalling oldps st = over board modifyBoard st
         ps = extractLocs t
         mbd = runSTArray $ do
           a <- thaw bd
-          mapM_ (\xy -> writeArray a xy (Filled t)) ps
+          mapM_ (\xy -> if inBoard bd xy
+                        then writeArray a xy (Filled t)
+                        else return ()) ps
           mapM_ (\xy -> if not $ xy `elem` ps
-                        then writeArray a xy Empty
+                        then (if inBoard bd xy
+                              then writeArray a xy Empty
+                              else return ())
                         else return ()) oldps
           return a
 
@@ -124,6 +128,15 @@ dropNew st = over falling dropIt st
   where
     b = view board st
     dropIt f = if hasLanded (extractLocs f) b then None else f
+
+resetSpeed :: State -> State
+resetSpeed st = over speed ifDropped st
+  where
+    f = view falling st
+    ifDropped s =
+      case f of
+       None -> 1
+       _ -> s
 
 advanceBag :: State -> State
 advanceBag st = over randomBag nextTet st
@@ -158,6 +171,7 @@ deleteRow :: Int -> Board -> [Location] -> Board
 deleteRow y bd ps = mbd
   where
     ignoreFalling a x
+      | not $ inBoard bd (x,y) = return ()
       | y + 1 > 20 = writeArray a (x, y) Empty
       | (x, y+1) `elem` ps = writeArray a (x, y) Empty
       | otherwise = (readArray a (x, y+1)) >>= (\v -> writeArray a (x, y) v)
@@ -225,10 +239,10 @@ keyPress :: Key.Key -> State -> State
 keyPress key st =
   case key of
    Key.SpaceKey -> (over speed $ (\_ -> 3)) st
-   Key.RightKey -> advanceFalling st Rgt
-   Key.LeftKey -> advanceFalling st Lft
-   Key.DownKey -> advanceFalling st Down
-   Key.UpKey -> doRotation st
+   Key.RightKey -> advanceFalling st Lft
+   Key.LeftKey -> advanceFalling st Rgt
+   Key.DownKey -> doRotation st -- advanceFalling st Down
+   Key.UpKey -> advanceFalling st Down
    _ -> st
    --Key.XKey -> doHold st
 -- if length (holding st) == 0 then holding st = [(fst (falling st))] -- holdkey
@@ -257,7 +271,10 @@ keyPress key st =
 -- copy of the one that is falling.
 isValidRotation :: Tetrimino -> Board -> Bool
 isValidRotation t bd =
-  all (\(x,y) -> not $ isBarrier (x,y) (extractLocs t) bd) (extractLocs $ rotate t)
+  all (\(x,y) -> (inBoard bd (x,y)) && (not $ isBarrier (x,y) ps bd)) ps'
+  where
+    ps = extractLocs t
+    ps' = extractLocs $ rotate t
 
 makeRotate :: State -> State
 makeRotate st = over falling rotate st
@@ -267,6 +284,7 @@ doRotation :: State -> State
 doRotation st
   | isValidRotation (view falling st) (view board st) =
       advanceBag
+      . resetSpeed
       . dropNew
       . addFallen
       . (showChangeInFalling (extractLocs $ view falling st))

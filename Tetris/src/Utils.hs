@@ -1,6 +1,7 @@
 module Utils where
 
 import Data.Array
+import Data.Array.ST (getBounds, writeArray, readArray)
 
 import Tetris
 
@@ -43,7 +44,8 @@ normalize :: Float -> [Location] -> [(Float, Float)]
 normalize c ps = map (\(x,y) -> ((toNum x)-c, (toNum y)-c)) ps
 
 turnBack :: Float -> [(Float, Float)] -> [Location]
-turnBack c fs = map (\(x,y) -> ((floor $ x + c), (floor $ y + c))) fs
+turnBack c fs = map (\(x,y) -> ((floor $ x + c), (floor $ y + c - 1))) fs
+-- maybe this iwll do it
 
 -- | Must be a full, 4 box tet
 rotate :: Tetrimino -> Tetrimino

@@ -10,9 +10,10 @@ import Data.Array
 -- n >= 4 lines on any level.
 
 scores :: Array (Int, Int) Int
-scores = array ((1,1), (100, 4)) (single ++ double ++ tripple ++ quad)
+scores = array ((0,0), (100, 4)) (non ++ single ++ double ++ tripple ++ quad)
   where
     single = [((l,1), 40*(l+1)) | l <- [1..100]]
     double = [((l,2), 100*(l+1)) | l <- [1..100]]
     tripple = [((l,3), 300*(l+1)) | l <- [1..100]]
     quad = [((l,4), 1200*(l+1)) | l <- [1..100]]
+    non = [((l,0), 0) | l <- [0..100]]

@@ -4,6 +4,7 @@ module Tetris where
 import Control.Lens
 import System.Random (randomRs, mkStdGen)
 import Data.Array (Array, array)
+import Data.List (sort)
 
 type Location = (Int, Int)
 
@@ -16,6 +17,8 @@ type Board = Array Location Cell
 data Cell = Wall | Empty | Filled Tetrimino | Ghost Tetrimino
           deriving (Show, Eq)
 
+
+
 -- Should each have an associated color? So it is easy to change the color?
 data Tetrimino = I [Location] -- Cyan 0
                | J [Location] -- Blue 1
@@ -25,7 +28,20 @@ data Tetrimino = I [Location] -- Cyan 0
                | T [Location] -- Purple 5
                | Z [Location] -- Red 6
                | None
-               deriving (Read, Show, Eq)
+               deriving (Read, Show)
+
+instance Eq Tetrimino where
+  t1 == t2 =
+    case (t1,t2) of
+     (I ps1, I ps2) -> (sort ps1) == (sort ps2)
+     (J ps1, J ps2) -> (sort ps1) == (sort ps2)
+     (L ps1, L ps2) -> (sort ps1) == (sort ps2)
+     (O ps1, O ps2) -> (sort ps1) == (sort ps2)
+     (S ps1, S ps2) -> (sort ps1) == (sort ps2)
+     (T ps1, T ps2) -> (sort ps1) == (sort ps2)
+     (Z ps1, Z ps2) -> (sort ps1) == (sort ps2)
+     (None, None) -> True
+     (_, _) -> False
 
 data State = State {
     _board :: Board

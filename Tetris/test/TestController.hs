@@ -108,7 +108,7 @@ main = hspec $ describe "Testing the control operations" $ do
       let tR = view falling stR
       let psR = extractLocs tR
       ps == psR `shouldBe` False
-      ps == (map (\(x,y) -> (x-1,y)) psR) `shouldBe` True
+      ps == (map (\(x,y) -> (x+1,y)) psR) `shouldBe` True
   describe "Test advanceFalling" $ do
     let st = initState
     let t = view falling st
@@ -134,10 +134,43 @@ main = hspec $ describe "Testing the control operations" $ do
       all (\xy -> (bd ! xy) == (Filled t')) ps `shouldBe` False
   describe "test rotation" $ do
     it "should properly rotate I" $ do
-      let ps = [(1,0), (1,1), (1,2), (1,3)]
-      findCenter ps `shouldBe` 2
-      rotate (I ps) `shouldBe`
-        (I [(0,2),(1,2), (2,2),(3,2)])
+      let ps1 = [(1,0),(1,1),(1,2),(1,3)]
+      let ps2 = [(0,2),(1,2),(2,2),(3,2)]
+      let ps3 = [(2,3),(2,2), (2,1),(2,0)]
+      let ps4 = [(1,1),(2,1), (3,1),(0,1)]
+      findCenter ps1 `shouldBe` 2
+      rotate (I ps1) `shouldBe` (I ps2)
+      rotate (I ps2) `shouldBe` (I ps3)
+      rotate (I ps3) `shouldBe` (I ps4)
+      rotate (I ps4) `shouldBe` (I ps1)
+    it "should properly rotate S" $ do
+      let ps1 = [(0,1), (1,1), (1,2), (2,2)]
+      let ps2 = [(1,2),(1,1),(2,1),(2,0)]
+      let ps3 = [(0,0),(1,0),(1,1),(2,1)]
+      let ps4 = [(0,2),(0,1),(1,1),(1,0)]
+      findCenter ps1 `shouldBe` 1.5
+      rotate (S ps1) `shouldBe` (S ps2)
+      rotate (S ps2) `shouldBe` (S ps3)
+      rotate (S ps3) `shouldBe` (S ps4)
+      rotate (S ps4) `shouldBe` (S ps1)
+    it "should update board" $ do
+      let ps = [(2,2),(2,3),(2,4),(2,5)]
+      let emp = [((x,y), Empty) | x<-[1..5], y<-[1..5], not $ (x,y) `elem` ps]
+      let l = [((0,y), Wall) | y<-[0..5]]
+      let r = [((6,y), Wall) | y<-[0..5]]
+      let b = [((x,0), Wall) | x<-[1..5]]
+      let t = [(xy, Filled (I ps)) | xy <- ps]
+      let bd = array ((0,0),(6,5)) (t ++ b ++ r ++ l ++ emp)
+      let st = State bd (I ps) 1 0.4 0 1 Active (drop 2 initBag) [] "" 0 []
+      let st' = doRotation st
+      let bd' = view board st'
+      let f' = view falling st'
+      let ps' = extractLocs f'
+      view landedTets st' `shouldBe` []
+      rotate (I ps) `shouldBe` f'
+      ps' `shouldBe` [(1,4),(2,4),(3,4),(4,4)]
+      all (\xy -> bd' ! xy == (Filled (I ps'))) ps' `shouldBe` True
+      all (\xy -> bd' ! xy == Empty) [(2,2),(2,3),(2,5)] `shouldBe` True
   describe "test the game over" $ do
     let f = S [(2,3),(2,4),(3,3),(3,2)]
     let line = I [(1,1),(1,2),(1,3),(1,4)]
