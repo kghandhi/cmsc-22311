@@ -26,19 +26,15 @@ inBoard bd (x,y) = x <= xmax && y <= ymax
 findCenter :: [Location] -> Float
 findCenter ps =
   let
-    findMaxDist :: [(Location, Location)] -> Int -> Int
-    findMaxDist xs m =
-      case xs of
-        [] ->  m
-        (((x,y),(v,w)):pairs) ->
-          let
-            m' = max (abs (x-v)) (abs (y-w))
-          in
-           if m' > m then findMaxDist pairs m'
-           else findMaxDist pairs m
-    len = findMaxDist (zip ps (tail ps)) 0 -- put it in a len by len box
+    xs = map (\(x,_) -> x) ps
+    ys = map (\(_,y) -> y) ps
+    maxx = maximum xs
+    maxy = maximum ys
+    minx = minimum xs
+    miny = minimum ys
+    totalMx = 1 + max (maxx - minx) (maxy - miny)
   in
-   (toNum len) / 2
+   (toNum totalMx) / 2
 
 toNum :: (Num c, Integral a) => a -> c
 toNum = fromInteger . toInteger

@@ -51,8 +51,8 @@ doMove ps spd b dir =
   let
     (px, py) =
       case dir of
-       Lft -> (1, 0)
-       Rgt -> (-1, 0)
+       Lft -> (-1, 0)
+       Rgt -> (1, 0)
        Down -> (0, -1)
        _ -> (0, 0)
     mapper points s = any (\(x,y) -> isBarrier (x, y) points b)
@@ -205,8 +205,8 @@ newHighScore st = over highScore check st
       | otherwise = high
 
 didFail :: Board -> [Location] -> Bool
-didFail bd ps = any (\x -> if (x,20) `elem` ps then False
-                        else  Empty /= (bd ! (x,20))) [1..11]
+didFail bd ps = any (\x -> (not ((x,20) `elem` ps)) &&
+                           Empty /= (bd ! (x,20))) [1..11]
 
 gameOver :: State -> State
 gameOver st

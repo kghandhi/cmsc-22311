@@ -132,3 +132,24 @@ main = hspec $ describe "Testing the control operations" $ do
       let ps = extractLocs t'
       all (\xy -> (bd' ! xy) == (Filled t')) ps `shouldBe` True
       all (\xy -> (bd ! xy) == (Filled t')) ps `shouldBe` False
+  describe "test rotation" $ do
+    it "should properly rotate I" $ do
+      let ps = [(1,0), (1,1), (1,2), (1,3)]
+      findCenter ps `shouldBe` 2
+      rotate (I ps) `shouldBe`
+        (I [(0,2),(1,2), (2,2),(3,2)])
+  describe "test the game over" $ do
+    let f = S [(2,3),(2,4),(3,3),(3,2)]
+    let line = I [(1,1),(1,2),(1,3),(1,4)]
+    let l = [((0,y), Wall) | y <- [0..4]]
+    let r = [((4,y), Wall) | y <- [0..4]]
+    let b = [((x,0), Wall) | x <- [1..3]]
+    let mid = [((2,1), Empty), ((2,2), Empty), ((3,1), Empty), ((3,4), Empty)]
+    let fp = [(xy, Filled f) | xy <- (extractLocs f)]
+    let other = [(xy, Filled line) | xy <- (extractLocs line)]
+    let bd = array ((0,0),(4,4)) (l ++ r ++ b++ mid ++fp ++ other)
+    let st = State bd f 1 0.4 0 1 Active (initBag) [] "" 0 []
+    let st' = gameOver st
+    let bd' = view board st'
+    it "Should detect when there is a piece that causes the game to be over" $ do
+      bd' == initBoard `shouldBe` True
