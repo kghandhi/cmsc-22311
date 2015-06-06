@@ -42,28 +42,8 @@ firstTrue = helper 0
     helper _ [] = Nothing
     helper i (b:bs') = if b then Just i else helper (i+1) bs'
 
--- doMove :: [Location] -> Int -> Board -> Direction -> [Location]
--- doMove ps spd b dir =
---   let
---     (px, py) =
---       case dir of
---        Lft -> (-1, 0)
---        Rgt -> (1, 0)
---        Down -> (0, -1)
---        _ -> (0, 0)
---     mapper points s = any (\(x,y) -> isBarrier (x, y) points b)
---                       (map (\(x,y) -> (x+px*s, y+py*s)) points)
---     -- For here, we must hit a barrier before going out of the array (based on speed)
---     mscale = firstTrue $ map (mapper ps) [1..spd]
---     scale =
---       case mscale of
---         Just sc -> sc
---         Nothing -> spd -- if its not going to hit a wall at all
---     (dx, dy) = (px*scale, py*scale)
---   in
---    map (\(x,y) -> (x + dx, y + dy)) ps
-
-doMove :: ([Location], Center) -> Int -> Board -> Direction -> ([Location], Center)
+doMove :: ([Location], Center) -> Int -> Board -> Direction
+          -> ([Location], Center)
 doMove (ps, (cx,cy)) spd b dir =
   let
     (px, py) =
@@ -74,7 +54,6 @@ doMove (ps, (cx,cy)) spd b dir =
        _ -> (0, 0)
     mapper points s = any (\(x,y) -> isBarrier (x, y) points b)
                       (map (\(x,y) -> (x+px*s, y+py*s)) points)
-    -- For here, we must hit a barrier before going out of the array (based on speed)
     mscale = firstTrue $ map (mapper ps) [1..spd]
     scale =
       case mscale of
@@ -215,7 +194,10 @@ rowIsFull y bd ps =
 -- Finds the maximum number of consecutive rows that are full
 countRuns :: Board -> [Location] -> Int
 countRuns bd ps = maximum
-                  $ map length
+                  $ map (\bs -> case bs of
+                                 [] -> 0
+                                 b:_ -> if b then length bs
+                                          else 0)
                   $ group
                   $ map (\y -> rowIsFull y bd ps) [1..20]
 
