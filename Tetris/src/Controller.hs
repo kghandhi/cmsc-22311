@@ -219,8 +219,8 @@ newHighScore st = over highScore check st
       | otherwise = high
 
 didFail :: Board -> [Location] -> Bool
-didFail bd ps = any (\x -> (not ((x,20) `elem` ps)) &&
-                           Empty /= (bd ! (x,20))) [1..11]
+didFail bd ps = any (\x -> (not $ ((x,20) `elem` ps)) &&
+                           Empty /= (bd ! (x,20))) [1..10]
 
 gameOver :: State -> State
 gameOver st
@@ -239,8 +239,8 @@ keyPress :: Key.Key -> State -> State
 keyPress key st =
   case key of
    Key.SpaceKey -> (over speed $ (\_ -> 3)) st
-   Key.RightKey -> advanceFalling st Rgt
-   Key.LeftKey -> advanceFalling st Lft
+   Key.RightKey -> advanceFalling st Lft
+   Key.LeftKey -> advanceFalling st Rgt
    Key.DownKey -> advanceFalling st Down
    Key.UpKey -> doRotation st
    _ -> st
@@ -294,5 +294,5 @@ doRotation st
 upstate :: Action -> State -> State
 upstate action oldSt =
   case action of
-   KeyAction key -> keyPress key oldSt
-   TimeAction -> tick oldSt
+   KeyAction key -> gameOver $ keyPress key oldSt
+   TimeAction -> gameOver $ tick oldSt

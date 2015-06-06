@@ -23,12 +23,10 @@ hackHead :: [Key] -> Key
 hackHead [] = TabKey
 hackHead ks = head ks
 
-
 --(Time -> b -> b) -> b -> Signal Time -> singal b
 actions :: Signal Action
-actions = merge (foldp (\_ _-> TimeAction) (TimeAction) (fps 3))
+actions = merge (foldp (\_ _-> TimeAction) (TimeAction) (fps 2.3))
           (lift (\ks -> KeyAction (hackHead ks)) keysDown)
-
 
 
 currState :: Signal State

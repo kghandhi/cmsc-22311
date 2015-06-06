@@ -55,7 +55,7 @@ view (w,h) st =
     lvl = (formatText (shift/2)) $ "Level: " ++ (show $ Lens.view level st)
     highScr = (formatText (shift/2)) $ "High Score: " ++ (show $ Lens.view highScore st)
     stats = G.group [scr, G.moveY (2+shift) lvl, G.moveY (2*shift+4) highScr]
-    currScore = (G.move (15*shift, 10*shift)) stats
+    currScore = (G.move (16*shift, 10*shift)) stats
     -- Maybe do some magic about where to start building
     currBoard = buildBoard (Lens.view board st) bSide
     toDisplay = G.move (-6*shift, (-9)*shift)
