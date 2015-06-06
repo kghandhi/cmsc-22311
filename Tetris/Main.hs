@@ -31,7 +31,6 @@ actions = merge (foldp (\_ _-> TimeAction) (TimeAction) (fps 3))
 
 
 
-
 currState :: Signal State
 currState = foldp upstate initState actions
 
