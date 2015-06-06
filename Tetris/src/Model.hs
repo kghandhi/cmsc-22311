@@ -1,12 +1,12 @@
 module Model where
 
-import FRP.Helm
+--import FRP.Helm
 import qualified FRP.Helm.Graphics as G
 import qualified FRP.Helm.Color as C
 
 
-import Tetris
-import Controller
+--import Tetris
+--import Controller
 
 orange :: C.Color
 orange = C.rgb 1 0.647 0

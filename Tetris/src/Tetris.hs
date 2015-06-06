@@ -7,6 +7,7 @@ import Data.Array (Array, array)
 import Data.List (sort)
 
 type Location = (Int, Int)
+type Center = (Double, Double)
 
 data GameState = Paused | Active | Over deriving Show
 
@@ -20,26 +21,26 @@ data Cell = Wall | Empty | Filled Tetrimino | Ghost Tetrimino
 
 
 -- Should each have an associated color? So it is easy to change the color?
-data Tetrimino = I [Location] -- Cyan 0
-               | J [Location] -- Blue 1
-               | L [Location]-- Orange 2
-               | O [Location]-- Yellow 3
-               | S [Location] -- Green 4
-               | T [Location] -- Purple 5
-               | Z [Location] -- Red 6
+data Tetrimino = I [Location] Center -- Cyan 0
+               | J [Location] Center -- Blue 1
+               | L [Location] Center -- Orange 2
+               | O [Location] Center -- Yellow 3
+               | S [Location] Center -- Green 4
+               | T [Location] Center -- Purple 5
+               | Z [Location] Center -- Red 6
                | None
                deriving (Read, Show)
 
 instance Eq Tetrimino where
   t1 == t2 =
     case (t1,t2) of
-     (I ps1, I ps2) -> (sort ps1) == (sort ps2)
-     (J ps1, J ps2) -> (sort ps1) == (sort ps2)
-     (L ps1, L ps2) -> (sort ps1) == (sort ps2)
-     (O ps1, O ps2) -> (sort ps1) == (sort ps2)
-     (S ps1, S ps2) -> (sort ps1) == (sort ps2)
-     (T ps1, T ps2) -> (sort ps1) == (sort ps2)
-     (Z ps1, Z ps2) -> (sort ps1) == (sort ps2)
+     (I ps1 _, I ps2 _) -> (sort ps1) == (sort ps2)
+     (J ps1 _, J ps2 _) -> (sort ps1) == (sort ps2)
+     (L ps1 _, L ps2 _) -> (sort ps1) == (sort ps2)
+     (O ps1 _, O ps2 _) -> (sort ps1) == (sort ps2)
+     (S ps1 _, S ps2 _) -> (sort ps1) == (sort ps2)
+     (T ps1 _, T ps2 _) -> (sort ps1) == (sort ps2)
+     (Z ps1 _, Z ps2 _) -> (sort ps1) == (sort ps2)
      (None, None) -> True
      (_, _) -> False
 
@@ -60,19 +61,19 @@ data State = State {
 makeLenses ''State
 
 initI :: Tetrimino
-initI = I [(4,20), (5,20), (6,20), (7,20)]
+initI = I [(4,20), (5,20), (6,20), (7,20)] (6,21)
 initJ :: Tetrimino
-initJ = J [(4,20), (4,19), (5,19), (6,19)]
+initJ = J [(4,20), (4,19), (5,19), (6,19)] (5.5, 19.5)
 initL :: Tetrimino
-initL = L [(4,19), (5,19), (6,19), (6,20)]
+initL = L [(4,19), (5,19), (6,19), (6,20)] (5.5, 19.5)
 initO :: Tetrimino
-initO = O [(5,20), (6,20), (5,19), (6,19)]
+initO = O [(5,20), (6,20), (5,19), (6,19)] (6, 20)
 initS :: Tetrimino
-initS = S [(4,19), (5,19), (5,20), (6,20)]
+initS = S [(4,19), (5,19), (5,20), (6,20)] (5.5, 19.5)
 initT :: Tetrimino
-initT = T [(4,19), (5,19), (5,20), (6,19)]
+initT = T [(4,19), (5,19), (5,20), (6,19)] (5.5, 19.5)
 initZ :: Tetrimino
-initZ = Z [(4,20), (5,20), (5,19), (6,19)]
+initZ = Z [(4,20), (5,20), (5,19), (6,19)] (5.5, 19.5)
 
 -- We should be able to pull a random Tetrimino out of a bag so we need
 -- infinite list

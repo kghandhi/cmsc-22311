@@ -12,13 +12,13 @@ main :: IO ()
 main = hspec $ describe "Testing the control operations" $ do
   describe "test extractLocs, most important fn" $ do
     it "should work" $ do
-      let tet1 = I [(1,2)]
-      let tet2 = J [(1,5),(3,4)]
-      let tet3 = L [(5,6),(7,8),(9,10)]
-      let tet4 = O [(0,1),(2,3)]
-      let tet5 = S [(9,1000)]
-      let tet6 = T [(0,12)]
-      let tet7 = Z [(9,1000), (100,7)]
+      let tet1 = I [(1,2)] (4,5)
+      let tet2 = J [(1,5),(3,4)] (43,2)
+      let tet3 = L [(5,6),(7,8),(9,10)] (12,3)
+      let tet4 = O [(0,1),(2,3)] (2,43)
+      let tet5 = S [(9,1000)] (5,7)
+      let tet6 = T [(0,12)] (3,4)
+      let tet7 = Z [(9,1000), (100,7)] (3,2)
       let tet8 = None
       extractLocs tet1 `shouldBe` [(1,2)]
       extractLocs tet2 `shouldBe` [(1,5),(3,4)]
@@ -33,7 +33,7 @@ main = hspec $ describe "Testing the control operations" $ do
       let locs = [(1,1),(1,2),(1,3),(1,4)]
       let lft = [((0,y), Wall) | y <- [0..4]]
       let rgt = [((3,y), Wall) | y <- [0..4]]
-      let tet = [((1,y), Filled (I locs)) | y <- [1..4]]
+      let tet = [((1,y), Filled (I locs (2,3))) | y <- [1..4]]
       let midd = [((2,y), Empty) | y <- [1..4]]
       let btm = [((x,0), Wall) | x <- [1..2]]
       let tnyBd = array ((0,0),(3,4)) (lft ++ rgt ++ btm ++ tet ++ midd)
@@ -43,7 +43,7 @@ main = hspec $ describe "Testing the control operations" $ do
       let lft = [((0,y), Wall) | y <- [0..5]]
       let rgt = [((3,y), Wall) | y <- [0..5]]
       let btm = [((x,0), Wall) | x <- [1..2]]
-      let tet = [((1,y), Filled (I locs)) | y <- [2..5]]
+      let tet = [((1,y), Filled (I locs (4,5))) | y <- [2..5]]
       let midd = ((1,1), Empty):[((2,y), Empty) | y <- [1..5]]
       let tnyBd = array ((0,0),(3,5)) (lft ++ rgt ++ btm ++ tet ++ midd)
       isBarrier (1,2-1) locs tnyBd `shouldBe` False
@@ -52,7 +52,7 @@ main = hspec $ describe "Testing the control operations" $ do
       let locs = [(1,1),(1,2),(1,3),(1,4)]
       let lft = [((0,y), Wall) | y <- [0..4]]
       let rgt = [((3,y), Wall) | y <- [0..4]]
-      let tet = [((1,y), Filled (I locs)) | y <- [1..4]]
+      let tet = [((1,y), Filled (I locs (4,5))) | y <- [1..4]]
       let midd = [((2,y), Empty) | y <- [1..4]]
       let btm = [((x,0), Wall) | x <- [1..2]]
       let tnyBd = array ((0,0),(3,4)) (lft ++ rgt ++ btm ++ tet ++ midd)
@@ -62,27 +62,27 @@ main = hspec $ describe "Testing the control operations" $ do
       let lft = [((0,y), Wall) | y <- [0..5]]
       let rgt = [((3,y), Wall) | y <- [0..5]]
       let btm = [((x,0), Wall) | x <- [1..2]]
-      let tet = [((1,y), Filled (I locs)) | y <- [2..5]]
+      let tet = [((1,y), Filled (I locs (4,5))) | y <- [2..5]]
       let midd = ((1,1),Empty):[((2,y), Empty) | y <- [1..5]]
       let tnyBd = array ((0,0),(3,5)) (lft ++ rgt ++ btm ++ tet ++ midd)
       hasLanded locs tnyBd `shouldBe` False
     it "Should be true when it lands on another one" $ do
-      let sqr = O [(1,1),(2,2),(1,2),(2,1)]
+      let sqr = O [(1,1),(2,2),(1,2),(2,1)] (4,5)
       let locs = [(1,3),(1,4),(1,5),(1,6)]
       let lft = [((0,y), Wall) | y <- [0..6]]
       let rgt = [((3,y), Wall) | y <- [0..6]]
-      let tet = [((1,y), Filled (I locs)) | y <- [3..6]]
+      let tet = [((1,y), Filled (I locs (4,5))) | y <- [3..6]]
       let friend = [((i,j), Filled sqr) | i <- [1..2], j <- [1..2]]
       let midd = [((2,y), Empty) | y <- [3..6]]
       let btm = [((x,0), Wall) | x <- [1..2]]
       let tnyBd = array ((0,0),(3,6)) (lft ++ rgt ++ btm ++ tet ++ midd ++ friend)
       hasLanded locs tnyBd `shouldBe` True
     it "Can land in the sense that it is hanging" $ do
-      let line = I [(1,1),(1,2),(1,3),(1,4)]
+      let line = I [(1,1),(1,2),(1,3),(1,4)] (4,5)
       let me = [(1,5),(2,5),(2,4),(2,3)]
       let lft = [((0,y), Wall) | y <- [0..5]]
       let rgt = [((3,y), Wall) | y <- [0..5]]
-      let tet = [(xy, Filled (J me)) | xy <- me]
+      let tet = [(xy, Filled (J me (4,5))) | xy <- me]
       let friend = [((1,y), Filled line) | y <- [1..4]]
       let midd = [((2,y), Empty) | y <- [1..2]]
       let btm = [((x,0), Wall) | x <- [1..2]]
@@ -108,7 +108,13 @@ main = hspec $ describe "Testing the control operations" $ do
       let tR = view falling stR
       let psR = extractLocs tR
       ps == psR `shouldBe` False
-      ps == (map (\(x,y) -> (x+1,y)) psR) `shouldBe` True
+      ps == (map (\(x,y) -> (x-1,y)) psR) `shouldBe` True
+    it "can move left" $ do
+      let stL = moveFalling st Lft
+      let tL = view falling stL
+      let psL = extractLocs tL
+      ps == psL `shouldBe` False
+      ps == (map (\(x,y) -> (x+1,y)) psL) `shouldBe` True
   describe "Test advanceFalling" $ do
     let st = initState
     let t = view falling st
@@ -136,44 +142,42 @@ main = hspec $ describe "Testing the control operations" $ do
     it "should properly rotate I" $ do
       let ps1 = [(1,0),(1,1),(1,2),(1,3)]
       let ps2 = [(0,2),(1,2),(2,2),(3,2)]
-      let ps3 = [(2,3),(2,2), (2,1),(2,0)]
-      let ps4 = [(1,1),(2,1), (3,1),(0,1)]
-      findCenter ps1 `shouldBe` 2
-      rotate (I ps1) `shouldBe` (I ps2)
-      rotate (I ps2) `shouldBe` (I ps3)
-      rotate (I ps3) `shouldBe` (I ps4)
-      rotate (I ps4) `shouldBe` (I ps1)
+      let ps3 = [(2,3),(2,2),(2,1),(2,0)]
+      let ps4 = [(1,1),(2,1),(3,1),(0,1)]
+      rotate (I ps1 (2,2)) `shouldBe` (I ps2 (2,2))
+      rotate (I ps2 (2,2)) `shouldBe` (I ps3 (2,2))
+      rotate (I ps3 (2,2)) `shouldBe` (I ps4 (2,2))
+      rotate (I ps4 (2,2)) `shouldBe` (I ps1 (2,2))
     it "should properly rotate S" $ do
-      let ps1 = [(0,1), (1,1), (1,2), (2,2)]
+      let ps1 = [(0,1),(1,1),(1,2),(2,2)]
       let ps2 = [(1,2),(1,1),(2,1),(2,0)]
       let ps3 = [(0,0),(1,0),(1,1),(2,1)]
       let ps4 = [(0,2),(0,1),(1,1),(1,0)]
-      findCenter ps1 `shouldBe` 1.5
-      rotate (S ps1) `shouldBe` (S ps2)
-      rotate (S ps2) `shouldBe` (S ps3)
-      rotate (S ps3) `shouldBe` (S ps4)
-      rotate (S ps4) `shouldBe` (S ps1)
+      rotate (S ps1 (1.5,1.5)) `shouldBe` (S ps2 (1.5,1.5))
+      rotate (S ps2 (1.5,1.5)) `shouldBe` (S ps3 (1.5,1.5))
+      rotate (S ps3 (1.5,1.5)) `shouldBe` (S ps4 (1.5,1.5))
+      rotate (S ps4 (1.5,1.5)) `shouldBe` (S ps1 (1.5,1.5))
     it "should update board" $ do
       let ps = [(2,2),(2,3),(2,4),(2,5)]
       let emp = [((x,y), Empty) | x<-[1..5], y<-[1..5], not $ (x,y) `elem` ps]
       let l = [((0,y), Wall) | y<-[0..5]]
       let r = [((6,y), Wall) | y<-[0..5]]
       let b = [((x,0), Wall) | x<-[1..5]]
-      let t = [(xy, Filled (I ps)) | xy <- ps]
+      let t = [(xy, Filled (I ps (3,4))) | xy <- ps]
       let bd = array ((0,0),(6,5)) (t ++ b ++ r ++ l ++ emp)
-      let st = State bd (I ps) 1 0.4 0 1 Active (drop 2 initBag) [] "" 0 []
+      let st = State bd (I ps (3,4)) 1 0.4 0 1 Active (drop 2 initBag) [] "" 0 []
       let st' = doRotation st
       let bd' = view board st'
       let f' = view falling st'
       let ps' = extractLocs f'
       view landedTets st' `shouldBe` []
-      rotate (I ps) `shouldBe` f'
+      rotate (I ps (3,4)) `shouldBe` f'
       ps' `shouldBe` [(1,4),(2,4),(3,4),(4,4)]
-      all (\xy -> bd' ! xy == (Filled (I ps'))) ps' `shouldBe` True
+      all (\xy -> bd' ! xy == (Filled (I ps' (3,4)))) ps' `shouldBe` True
       all (\xy -> bd' ! xy == Empty) [(2,2),(2,3),(2,5)] `shouldBe` True
   describe "test the game over" $ do
-    let f = S [(2,3),(2,4),(3,3),(3,2)]
-    let line = I [(1,1),(1,2),(1,3),(1,4)]
+    let f = S [(2,3),(2,4),(3,3),(3,2)] (2,3)
+    let line = I [(1,1),(1,2),(1,3),(1,4)] (23,3)
     let l = [((0,y), Wall) | y <- [0..4]]
     let r = [((4,y), Wall) | y <- [0..4]]
     let b = [((x,0), Wall) | x <- [1..3]]

@@ -5,13 +5,9 @@ import Score (scores)
 import Utils
 
 import Control.Lens
---import Control.Monad ((>>=))
 import Data.Array
 import Data.Array.ST
 import Data.List (group)
---import Data.Maybe (fromJust)
---import Control.Monad.ST
---import FRP.Helm hiding (group, rotate)
 import qualified FRP.Helm.Keyboard as Key
 
 data Action = KeyAction Key.Key | TimeAction
@@ -46,8 +42,29 @@ firstTrue = helper 0
     helper _ [] = Nothing
     helper i (b:bs') = if b then Just i else helper (i+1) bs'
 
-doMove :: [Location] -> Int -> Board -> Direction -> [Location]
-doMove ps spd b dir =
+-- doMove :: [Location] -> Int -> Board -> Direction -> [Location]
+-- doMove ps spd b dir =
+--   let
+--     (px, py) =
+--       case dir of
+--        Lft -> (-1, 0)
+--        Rgt -> (1, 0)
+--        Down -> (0, -1)
+--        _ -> (0, 0)
+--     mapper points s = any (\(x,y) -> isBarrier (x, y) points b)
+--                       (map (\(x,y) -> (x+px*s, y+py*s)) points)
+--     -- For here, we must hit a barrier before going out of the array (based on speed)
+--     mscale = firstTrue $ map (mapper ps) [1..spd]
+--     scale =
+--       case mscale of
+--         Just sc -> sc
+--         Nothing -> spd -- if its not going to hit a wall at all
+--     (dx, dy) = (px*scale, py*scale)
+--   in
+--    map (\(x,y) -> (x + dx, y + dy)) ps
+
+doMove :: ([Location], Center) -> Int -> Board -> Direction -> ([Location], Center)
+doMove (ps, (cx,cy)) spd b dir =
   let
     (px, py) =
       case dir of
@@ -65,7 +82,8 @@ doMove ps spd b dir =
         Nothing -> spd -- if its not going to hit a wall at all
     (dx, dy) = (px*scale, py*scale)
   in
-   map (\(x,y) -> (x + dx, y + dy)) ps
+   (map (\(x,y) -> (x + dx, y + dy)) ps, (cx + (toNum dx), cy + (toNum dy)))
+
 
 -- | advanceFalling
 -- 1. Advance the falling piece (based on speed). If there isn't a piece
@@ -88,13 +106,13 @@ moveFalling st dir = over falling fallingFn st
     bd = view board st
     fallingFn f =
       case f of
-       I ps -> I (doMove ps spd bd dir)
-       J ps -> J (doMove ps spd bd dir)
-       L ps -> L (doMove ps spd bd dir)
-       O ps -> O (doMove ps spd bd dir)
-       S ps -> S (doMove ps spd bd dir)
-       T ps -> T (doMove ps spd bd dir)
-       Z ps -> Z (doMove ps spd bd dir)
+       I ps c -> let (ps', c') = doMove (ps,c) spd bd dir in I ps' c'
+       J ps c -> let (ps', c') = doMove (ps,c) spd bd dir in J ps' c'
+       L ps c -> let (ps', c') = doMove (ps,c) spd bd dir in L ps' c'
+       O ps c -> let (ps', c') = doMove (ps,c) spd bd dir in O ps' c'
+       S ps c -> let (ps', c') = doMove (ps,c) spd bd dir in S ps' c'
+       T ps c -> let (ps', c') = doMove (ps,c) spd bd dir in T ps' c'
+       Z ps c -> let (ps', c') = doMove (ps,c) spd bd dir in Z ps' c'
        None -> head (view randomBag st) -- Drop a new one, modify randomBag
 
 showChangeInFalling :: [Location] -> State -> State
@@ -239,10 +257,10 @@ keyPress :: Key.Key -> State -> State
 keyPress key st =
   case key of
    Key.SpaceKey -> (over speed $ (\_ -> 3)) st
-   Key.RightKey -> advanceFalling st Lft
-   Key.LeftKey -> advanceFalling st Rgt
-   Key.DownKey -> doRotation st -- advanceFalling st Down
-   Key.UpKey -> advanceFalling st Down
+   Key.RightKey -> advanceFalling st Rgt
+   Key.LeftKey -> advanceFalling st Lft
+   Key.DownKey -> advanceFalling st Down
+   Key.UpKey -> doRotation st
    _ -> st
    --Key.XKey -> doHold st
 -- if length (holding st) == 0 then holding st = [(fst (falling st))] -- holdkey

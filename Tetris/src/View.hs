@@ -18,13 +18,13 @@ cellToForm c bSide =
    Wall -> wall bSide
    Filled t ->
      case t of
-      I _ -> blockOfI bSide
-      J _ -> blockOfJ bSide
-      L _ -> blockOfL bSide
-      O _ -> blockOfO bSide
-      S _ -> blockOfS bSide
-      T _ -> blockOfT bSide
-      Z _ -> blockOfS bSide
+      I _ _ -> blockOfI bSide
+      J _ _ -> blockOfJ bSide
+      L _ _ -> blockOfL bSide
+      O _ _ -> blockOfO bSide
+      S _ _ -> blockOfS bSide
+      T _ _ -> blockOfT bSide
+      Z _ _ -> blockOfS bSide
       None -> empty bSide
    _ -> empty bSide
 
