@@ -239,30 +239,59 @@ keyPress :: Key.Key -> State -> State
 keyPress key st =
   case key of
    Key.SpaceKey -> (over speed $ (\_ -> 3)) st
-   Key.RightKey -> advanceFalling st Lft
-   Key.LeftKey -> advanceFalling st Rgt
+   Key.RightKey -> advanceFalling st Rgt
+   Key.LeftKey -> advanceFalling st Lft
    Key.DownKey -> advanceFalling st Down
    Key.UpKey -> doRotation st
+   Key.XKey -> doHold st
+   Key.RKey -> restartGame st
    _ -> st
    --Key.XKey -> doHold st
 -- if length (holding st) == 0 then holding st = [(fst (falling st))] -- holdkey
      -- RKey -> -- restart game
-     -- MKey -> -- toggle music
+
      -- PKey -> -- Pause
     -- _ -> st
 
 -- X key
--- doHold :: State -> State
--- doHold st = set holding h' (set falling f' (set randomBag rb'))
---   where
---     h = view holding st
---     f = view falling st
---     rb = view randomBag st
---     (h', f', rb') =
---       case h of
---        [] -> ([f], head rb, tail rb)
---        [held] -> ([f], held, rb)
---        h -> (head h, f, rb)
+doHold :: State -> State
+doHold st = showChangeInFalling (extractLocs f)
+            . resetSpeed
+            . (set holding hs')
+            . (set falling f')
+            $ set randomBag rb' st
+  where
+    hs = view holding st
+    f = view falling st
+    rb = view randomBag st
+    (hs', f', rb') =
+      case hs of
+       [] -> (putInBag f, head rb, tail rb)
+       [held] -> (putInBag f, held, rb)
+       xs -> ([head xs], f, rb)
+
+putInBag :: Tetrimino -> [Tetrimino]
+putInBag t =
+  case t of
+   I _ _ -> [initI]
+   J _ _ -> [initJ]
+   L _ _ -> [initL]
+   O _ _ -> [initO]
+   S _ _ -> [initS]
+   T _ _ -> [initT]
+   Z _ _ -> [initZ]
+   None -> []
+
+restartGame :: State -> State
+restartGame st = st'
+  where
+    hScr = view highScore st
+    lvl = view level st
+    newBag = pickRandomBag (lvl + hScr + 17)
+    st' = (set randomBag (tail newBag))
+          . (set falling (head newBag))
+          . (set level lvl)
+          $ set highScore hScr initState
 
 -- Up key
 -- We only want the locations that are actually on the board already

@@ -9,18 +9,15 @@ import Data.List (sort)
 type Location = (Int, Int)
 type Center = (Double, Double)
 
-data GameState = Paused | Active | Over deriving Show
+data GameState = Start | Paused | Active | Over deriving Show
 
 -- But well modify it using freeze and thaw
 type Board = Array Location Cell
 
--- The Ghost piece is the shadow
+-- The Ghost piece is the shadow, is not implemented
 data Cell = Wall | Empty | Filled Tetrimino | Ghost Tetrimino
           deriving (Show, Eq)
 
-
-
--- Should each have an associated color? So it is easy to change the color?
 data Tetrimino = I [Location] Center -- Cyan 0
                | J [Location] Center -- Blue 1
                | L [Location] Center -- Orange 2
@@ -48,13 +45,11 @@ data State = State {
     _board :: Board
   , _falling :: Tetrimino
   , _speed :: Int
-  , _lockDelay :: Float
   , _score :: Int
   , _level :: Int
   , _gameSt :: GameState
   , _randomBag :: [Tetrimino]
   , _holding :: [Tetrimino] --length at most 1
-  , _songChoice :: String
   , _highScore :: Int
   , _landedTets :: [Tetrimino]
   } deriving Show
@@ -62,16 +57,22 @@ makeLenses ''State
 
 initI :: Tetrimino
 initI = I [(4,20), (5,20), (6,20), (7,20)] (6,21)
+
 initJ :: Tetrimino
 initJ = J [(4,20), (4,19), (5,19), (6,19)] (5.5, 19.5)
+
 initL :: Tetrimino
 initL = L [(4,19), (5,19), (6,19), (6,20)] (5.5, 19.5)
+
 initO :: Tetrimino
 initO = O [(5,20), (6,20), (5,19), (6,19)] (6, 20)
+
 initS :: Tetrimino
 initS = S [(4,19), (5,19), (5,20), (6,20)] (5.5, 19.5)
+
 initT :: Tetrimino
 initT = T [(4,19), (5,19), (5,20), (6,19)] (5.5, 19.5)
+
 initZ :: Tetrimino
 initZ = Z [(4,20), (5,20), (5,19), (6,19)] (5.5, 19.5)
 
@@ -100,5 +101,5 @@ safeHead [] = head $ pickRandomBag 19
 safeHead ls = head ls
 
 initState :: State
-initState = State initBoard (safeHead initBag) 1 0.6 0 1 Active
-            (drop 1 initBag) [] "" 0 []
+initState = State initBoard (safeHead initBag) 1 0 1 Start
+            (drop 1 initBag) [] 0 []

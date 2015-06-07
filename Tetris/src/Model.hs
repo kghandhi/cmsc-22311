@@ -3,8 +3,11 @@ module Model where
 import qualified FRP.Helm.Graphics as G
 import qualified FRP.Helm.Color as C
 
-orange :: C.Color
-orange = C.rgb 1 0.647 0
+-- | my colors
+myPurple = C.rgb 0.482 0.4078 0.93333
+myBlue = C.rgb 0.282 0.8196 0.8
+myOrange = C.rgb 0.804 0.522 0.247
+myRed = C.rgb 0.698 0.1333 0.1333
 
 background :: Double -> Double -> G.Form
 background w h =
@@ -17,7 +20,7 @@ blockOfJ :: Double -> G.Form
 blockOfJ r = G.filled C.blue $ G.square r
 
 blockOfL :: Double -> G.Form
-blockOfL r = G.filled orange $ G.square r
+blockOfL r = G.filled myOrange $ G.square r
 
 blockOfO :: Double -> G.Form
 blockOfO r = G.filled C.yellow $ G.square r
@@ -29,7 +32,7 @@ blockOfT :: Double -> G.Form
 blockOfT r = G.filled C.purple $ G.square r
 
 blockOfZ :: Double -> G.Form
-blockOfZ r = G.filled C.red $ G.square r
+blockOfZ r = G.filled myRed $ G.square r
 
 empty :: Double -> G.Form
 empty r = G.filled C.black $ G.square r

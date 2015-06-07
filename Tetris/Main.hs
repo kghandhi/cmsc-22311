@@ -25,9 +25,8 @@ hackHead ks = head ks
 
 --(Time -> b -> b) -> b -> Signal Time -> singal b
 actions :: Signal Action
-actions = merge (foldp (\_ _-> TimeAction) (TimeAction) (fps 2.3))
+actions = merge (foldp (\_ _-> TimeAction) (TimeAction) (fps 2.4))
           (lift (\ks -> KeyAction (hackHead ks)) keysDown)
-
 
 currState :: Signal State
 currState = foldp upstate initState actions
