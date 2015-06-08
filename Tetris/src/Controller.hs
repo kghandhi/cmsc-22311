@@ -1,7 +1,7 @@
 module Controller where
 
-import Tetris
 import Score (scores)
+import Tetris
 import Utils
 
 import Control.Lens
@@ -10,21 +10,31 @@ import Data.Array.ST
 import Data.List (group)
 import qualified FRP.Helm.Keyboard as Key
 
+-- An action can either be a key press or a tick
 data Action = KeyAction Key.Key | TimeAction
 
--- Because the prelude uses Left and Right, these refer to
--- Left, Right, Down and Rotate
+-- Because the prelude uses Left and Right, and [L,R,D,Rotate] are not
+-- informative
 data Direction = Lft | Rgt | Down | Rotate
 
+-- | tick is the handler for advancing the state when a TimeAction Action fires
+-- 1. Advance the falling piece down according to it's speed (this includes more
+--    change to the state than just advancing the piece, see the description of
+--    advanceFalling).
+-- 2. If the change in there are rows that are now full, clear them (this also
+--    involves more change to state).
 tick :: State -> State
 tick st = clearRows $ advanceFalling st Down
 
--- we have only landed if there is a barrier directly below us
 -- Since all tetriminos must be at or above 1, this will never be out of bounds
+-- Claim: the falling tetrimino has landed if there is a barrier directly below
+-- We ignore the locations on the board that are elements of the falling piece,
+-- though, because a tet hasn't landed if for one of it's locations, the spot
+-- directly below it is Filled by another cell of that piece
 hasLanded :: [Location] -> Board -> Bool
 hasLanded ps b = any (\(x,y) -> isBarrier (x,y-1) ps b) ps
 
--- ps is the points in a tetrimino
+-- Checks if a location on the board is a barrier. Ignores the falling tetrimino
 isBarrier :: Location -> [Location] -> Board -> Bool
 isBarrier (x, y) ps b
   | inBoard b (x,y)=
@@ -34,7 +44,7 @@ isBarrier (x, y) ps b
      _ -> False
   | otherwise = True
 
--- Index (starting at 1) of the first true. We start at 0 because we want the
+-- Index (starting at 1) of the first True. We start at 0 because we want the
 -- last index before true
 firstTrue :: [Bool] -> Maybe Int
 firstTrue = helper 0
@@ -42,6 +52,11 @@ firstTrue = helper 0
     helper _ [] = Nothing
     helper i (b:bs') = if b then Just i else helper (i+1) bs'
 
+-- Advances a tetrimino's locations (including center) by as far as it can go
+-- A tet can move at most its speed time a vector in the direction of its travel
+-- To ensure the piece does not fall off the side of the board, we check how
+-- many cells it can go (up to the direction vector times speed vector) and call
+-- that (dx,dy) which we add to all the tet's locations before returning
 doMove :: ([Location], Center) -> Int -> Board -> Direction
           -> ([Location], Center)
 doMove (ps, (cx,cy)) spd b dir =
@@ -66,20 +81,27 @@ doMove (ps, (cx,cy)) spd b dir =
 
 -- | advanceFalling
 -- 1. Advance the falling piece (based on speed). If there isn't a piece
--- falling, put a new one on the board from the randomBag
+-- falling, put a new one on the board from the randomBag and advance
+-- random bag
 -- 2. Update the board to account for the move or the addition of a new
 -- piece
--- 3. Modify the random bag so that you take off the piece that just went
--- into play
--- 4. If a new one has landed, add it to the list of those on the board
+-- 3. If the falling piece has landed, add it to the list of pieces on the
+-- board
+-- 4. If the falling piece has landed drop a new one from the random bag
+-- 5. If a new tetrimino has been dropped, reset its speed to the normal start
+-- speed (1)
 advanceFalling :: State -> Direction -> State
-advanceFalling st dir = (advanceBag . resetSpeed . dropNew . addFallen
+advanceFalling st dir = (resetSpeed . dropNew . addFallen
                         . (showChangeInFalling ps)) $ moveFalling st dir
   where
     ps = extractLocs $ view falling st
 
+-- Does 1.
 moveFalling :: State -> Direction -> State
-moveFalling st dir = over falling fallingFn st
+moveFalling st dir
+  | (view falling st == None) = set randomBag (tail randomBag)
+                                $ over falling fallingFn st
+  | otherwise = over falling fallingFn st
   where
     spd = view speed st
     bd = view board st
@@ -94,6 +116,7 @@ moveFalling st dir = over falling fallingFn st
        Z ps c -> let (ps', c') = doMove (ps,c) spd bd dir in Z ps' c'
        None -> head (view randomBag st) -- Drop a new one, modify randomBag
 
+-- Does 2.
 showChangeInFalling :: [Location] -> State -> State
 showChangeInFalling oldps st = over board modifyBoard st
   where
@@ -113,6 +136,7 @@ showChangeInFalling oldps st = over board modifyBoard st
                         else return ()) oldps
           return a
 
+-- Does 3.
 addFallen :: State -> State
 addFallen st = over landedTets checkAndAdd st
   where
@@ -120,12 +144,15 @@ addFallen st = over landedTets checkAndAdd st
       let f = view falling st in
       if hasLanded (extractLocs f) (view board st) then f:tot else tot
 
+-- Does 4. Notice None is used so that next time we drop a new one since it
+-- looks bad to land then drop a new one immediately.
 dropNew :: State -> State
 dropNew st = over falling dropIt st
   where
     b = view board st
     dropIt f = if hasLanded (extractLocs f) b then None else f
 
+-- Does 5.
 resetSpeed :: State -> State
 resetSpeed st = over speed ifDropped st
   where
@@ -135,6 +162,7 @@ resetSpeed st = over speed ifDropped st
        None -> 1
        _ -> s
 
+-- Does 6.
 advanceBag :: State -> State
 advanceBag st = over randomBag nextTet st
   where
