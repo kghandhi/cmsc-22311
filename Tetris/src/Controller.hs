@@ -175,7 +175,8 @@ deleteRow y bd ps = mbd
     mbd = runSTArray $ do
       a <- thaw bd
       mapM_ (ignoreFalling a) [1..10]
-      mapM_ (\x -> writeArray a (x, 20) Empty) [1..10]
+      mapM_ (\x -> if (x,20) `elem` ps then return ()
+                   else writeArray a (x, 20) Empty) [1..10]
       return a
 
 rowIsFull :: Int -> Board -> [Location] -> Bool
@@ -222,6 +223,17 @@ didFail :: Board -> [Location] -> Bool
 didFail bd ps = any (\x -> (not $ ((x,20) `elem` ps)) &&
                            Empty /= (bd ! (x,20))) [1..10]
 
+endGame :: State -> State
+endGame st = overState
+  where
+    oldHigh = view highScore st
+    newBag = pickRandomBag (oldHigh + (view score st) + 31)
+    overState = set randomBag newBag
+                . set falling None
+                . set highScore oldHigh
+                $ set gameSt Over initState
+
+
 gameOver :: State -> State
 gameOver st
   | didFail (view board st) (extractLocs $ view falling st) = initState
@@ -233,7 +245,6 @@ gameOver st
 -- Up Key -> Rotate clockwise
 -- XKey -> Hold
 -- R key -> Restart the game
--- M key -> toggle music
 -- P key -> Pause (show menu)
 keyPress :: Key.Key -> State -> State
 keyPress key st =
@@ -245,13 +256,8 @@ keyPress key st =
    Key.UpKey -> doRotation st
    Key.XKey -> doHold st
    Key.RKey -> restartGame st
+   Key.PKey -> pauseGame st
    _ -> st
-   --Key.XKey -> doHold st
--- if length (holding st) == 0 then holding st = [(fst (falling st))] -- holdkey
-     -- RKey -> -- restart game
-
-     -- PKey -> -- Pause
-    -- _ -> st
 
 -- X key
 doHold :: State -> State
@@ -288,10 +294,18 @@ restartGame st = st'
     hScr = view highScore st
     lvl = view level st
     newBag = pickRandomBag (lvl + hScr + 17)
-    st' = (set randomBag (tail newBag))
-          . (set falling (head newBag))
-          . (set level lvl)
-          $ set highScore hScr initState
+    st' = case (view gameSt st) of
+           Over -> set gameSt Active
+           Start -> initState
+           _ -> (set randomBag (tail newBag))
+                . (set falling (head newBag))
+                . (set level lvl)
+                $ set highScore hScr initState
+
+pauseGame :: State -> State
+pauseGame st = st'
+  where
+    st' = set gameSt Paused st
 
 -- Up key
 -- We only want the locations that are actually on the board already

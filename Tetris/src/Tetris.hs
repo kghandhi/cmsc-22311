@@ -9,7 +9,7 @@ import Data.List (sort)
 type Location = (Int, Int)
 type Center = (Double, Double)
 
-data GameState = Start | Paused | Active | Over deriving Show
+data GameState = Start | Paused | Active | Over deriving (Eq, Show)
 
 -- But well modify it using freeze and thaw
 type Board = Array Location Cell

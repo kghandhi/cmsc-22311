@@ -10,7 +10,7 @@ import Utils
 
 main :: IO ()
 main = hspec $ describe "Testing the control operations" $ do
-  describe "test extractLocs, most important fn" $ do
+  describe "test extractLocs on all Tetriminos" $ do
     it "should work" $ do
       let tet1 = I [(1,2)] (4,5)
       let tet2 = J [(1,5),(3,4)] (43,2)
@@ -99,10 +99,8 @@ main = hspec $ describe "Testing the control operations" $ do
       length ps `shouldBe` 4
       length ps' `shouldBe` 4
     it "Is one farther down in y" $ do
-      --putStrLn $ show ps'
       ps == ps' `shouldBe` False
       ps == (map (\(x,y) -> (x,y+1)) ps') `shouldBe` True
-     -- `shouldBe` True
     it "can move right" $ do
       let stR = moveFalling st Rgt
       let tR = view falling stR
@@ -185,12 +183,61 @@ main = hspec $ describe "Testing the control operations" $ do
                               , y<-[1..20]
                               , not $ (x,y) `elem` (extractLocs line)
                               , not $ (x,y) `elem` (extractLocs f)]
-    --let mid = [((2,1), Empty), ((2,2), Empty), ((3,1), Empty), ((3,4), Empty)]
     let fp = [(xy, Filled f) | xy <- (extractLocs f)]
     let other = [(xy, Filled line) | xy <- (extractLocs line)]
     let bd = array ((0,0),(12,20)) (l ++ r ++ b++ mid ++fp ++ other)
-    let st = State bd f 1 0.4 0 1 Active (initBag) [] "" 0 []
+    let st = State bd f 1 0 1 Active (initBag) [] 0 []
     let st' = gameOver st
     let bd' = view board st'
     it "Should detect when there is a piece that causes the game to be over" $ do
       bd' == initBoard `shouldBe` True
+    it "Should change state" $ do
+      view gameSt st' `shouldBe` Over
+  describe "test clearing rows" $ do
+    let i1 = I [(1,1),(2,1),(3,1),(4,1)] (2,3)
+    let i2 = I [(5,1),(6,1),(7,1),(8,1)] (5,1)
+    let i3 = I [(1,2),(1,3),(1,4),(1,5)] (2,10)
+    let i4 = I [(2,2),(3,2),(4,2),(5,2)] (3,5)
+    let i5 = I [(6,2),(7,2),(8,2),(9,2)] (9,9)
+    let j = J [(9,1),(10,1),(10,2),(10,3)] (1,10)
+    let f = I [(1,17),(1,18),(1,19),(1,20)] (23,3)
+    let l = [((0,y), Wall) | y <- [0..20]]
+    let r = [((12,y), Wall) | y <- [0..20]]
+    let b = [((x,0), Wall) | x <- [1..10]]
+    let mid = [((x,y), Empty) | x<-[1..10]
+                              , y<-[1..20]
+                              , not $ (x,y) `elem` (extractLocs f)
+                              , not $ (x,y) `elem` (extractLocs j)
+                              , not $ (x,y) `elem` (extractLocs i1)
+                              , not $ (x,y) `elem` (extractLocs i2)
+                              , not $ (x,y) `elem` (extractLocs i3)
+                              , not $ (x,y) `elem` (extractLocs i4)
+                              , not $ (x,y) `elem` (extractLocs i5)
+                              ]
+    let jP = [(xy, Filled j) | xy <- (extractLocs j)]
+    let iP1 = [(xy, Filled i1) | xy <- (extractLocs i1)]
+    let iP2 = [(xy, Filled i2) | xy <- (extractLocs i2)]
+    let iP3 = [(xy, Filled i3) | xy <- (extractLocs i3)]
+    let iP4 = [(xy, Filled i4) | xy <- (extractLocs i4)]
+    let iP5 = [(xy, Filled i5) | xy <- (extractLocs i5)]
+    let other = [(xy, Filled f) | xy <- (extractLocs f)]
+    let bd = array ((0,0),(12,20))
+        (l ++ r ++ b++ mid ++ jP ++ other ++ iP1 ++iP2++iP3++iP4++iP5 )
+    let st = State bd f 1 0 1 Active (initBag) [] 0 []
+    let st' = clearRows st
+    it "should detect 2 full rows" $ do
+      countRuns bd (extractLocs f) `shouldBe` 2
+    it "should detect that rows 1 and 2 are full" $ do
+      rowIsFull 1 bd (extractLocs f) `shouldBe` True
+      rowIsFull 2 bd (extractLocs f) `shouldBe` True
+    it "should not call row 3 full" $ do
+      rowIsFull 3 bd (extractLocs f) `shouldBe` False
+    it "should properly clear those rows" $ do
+      let bd' = view board st
+      all (\x -> Empty == (bd' ! (x,1))) [2..9] `shouldBe` True
+      all (\x -> Empty == (bd' ! (x,2))) [2..10] `shouldBe` True
+      all (\x -> Empty == (bd' ! (x,3))) [2..10] `shouldBe` True
+      all (\x -> Empty == (bd' ! (x,4))) [1..10] `shouldBe` True
+    it "should increase the score and high score" $ do
+      (view score st') > 0 `shouldBe` True
+      (view highScore st') == (view score st') `shouldBe` True
