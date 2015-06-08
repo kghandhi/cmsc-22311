@@ -19,17 +19,24 @@ merge s1 s2 =
   in
    tsMerge <~ timestamp s1 ~~ timestamp s2
 
+mergy :: Signal Time -> Signal [Key] -> Signal Action
+mergy st sk = lift2 (\t ks -> if ks == [] then TimeAction
+                              else KeyAction (head ks)) st sk
+
+mergyAction :: Signal Action
+mergyAction = mergy (fps 2.4) (keysDown)
+
 hackHead :: [Key] -> Key
 hackHead [] = TabKey
 hackHead ks = head ks
 
 --(Time -> b -> b) -> b -> Signal Time -> singal b
 actions :: Signal Action
-actions = merge (foldp (\_ _-> TimeAction) (TimeAction) (fps 2.4))
-          (lift (\ks -> KeyAction (hackHead ks)) keysDown)
+actions = (merge (foldp (\_ _-> TimeAction) (TimeAction) (fps 2.4))
+          (lift (\ks -> KeyAction (hackHead ks)) keysDown))
 
 currState :: Signal State
-currState = foldp upstate initState actions
+currState = foldp upstate initState mergyAction
 
 main :: IO ()
 main = do
