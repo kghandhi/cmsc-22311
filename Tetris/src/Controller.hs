@@ -302,9 +302,10 @@ restartGame st =
     newBag = pickRandomBag (lvl + hScr + 17)
 
 pauseGame :: State -> State
-pauseGame st = st'
-  where
-    st' = set gameSt Paused st
+pauseGame st =
+  case (view gameSt st) of
+  Paused -> set gameSt Active st
+  _ -> set gameSt Paused st
 
 -- Up key
 -- We only want the locations that are actually on the board already
