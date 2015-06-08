@@ -389,7 +389,7 @@ makeRotate st
        over falling rotate
        . set randomBag (tail rb)
        $ set falling (head rb) st
-  | otherwise = over falling rotate
+  | otherwise = over falling rotate st
 
 -- When the game is inactive only update the state on key press, otherwise
 -- update the state based on time or key action.
