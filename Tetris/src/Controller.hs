@@ -99,7 +99,7 @@ advanceFalling st dir = (resetSpeed . dropNew . addFallen
 -- Does 1.
 moveFalling :: State -> Direction -> State
 moveFalling st dir
-  | (view falling st == None) = set randomBag (tail randomBag)
+  | (view falling st == None) = set randomBag (tail $ view randomBag st)
                                 $ over falling fallingFn st
   | otherwise = over falling fallingFn st
   where
