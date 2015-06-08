@@ -91,8 +91,11 @@ doMove (ps, (cx,cy)) spd b dir =
 -- 5. If a new tetrimino has been dropped, reset its speed to the normal start
 -- speed (1)
 advanceFalling :: State -> Direction -> State
-advanceFalling st dir = (resetSpeed . dropNew . addFallen
-                        . (showChangeInFalling ps)) $ moveFalling st dir
+advanceFalling st dir = resetSpeed
+                        . dropNew
+                        . addFallen
+                        . (showChangeInFalling ps)
+                        $ moveFalling st dir
   where
     ps = extractLocs $ view falling st
 
@@ -162,15 +165,6 @@ resetSpeed st = over speed ifDropped st
        None -> 1
        _ -> s
 
--- Does 6.
-advanceBag :: State -> State
-advanceBag st = over randomBag nextTet st
-  where
-    nextTet rb =
-      case view falling st of
-       None -> tail rb
-       _ -> rb
-
 -- | ClearRows
 -- 1. Find the largest number of consecutive rows that are full and update
 -- the score accordingly
@@ -183,6 +177,9 @@ clearRows st = newHighScore . (updateScore bonus) $ doClear st
     ps = extractLocs f
     bonus = countRuns (view board st) ps
 
+-- Clears the rows that are full recursively. If row y is full, delete the row
+-- then look at it again until it is no longer full, then look at the next row
+-- up.
 doClear :: State -> State
 doClear st = over board (clear 1) st
   where
@@ -192,6 +189,9 @@ doClear st = over board (clear 1) st
       | otherwise = clear (y + 1) bd
     ps = extractLocs $ view falling st
 
+-- Modify the board. Shift all the rows starting at yStart down one (killing
+-- yStart). The top row should bring in only empty squares and that top row
+-- wont be a falling piece because falling pieces start at row at most 20.
 deleteRow :: Int -> Board -> [Location] -> Board
 deleteRow yStart bd ps = mbd
   where
@@ -205,6 +205,8 @@ deleteRow yStart bd ps = mbd
       mapM_ (\y -> mapM_ (ignoreFalling a y) [1..10]) [yStart..20]
       return a
 
+-- Returns true if the row is full, a cell is not full if it is part of the
+-- falling piece.
 rowIsFull :: Int -> Board -> [Location] -> Bool
 rowIsFull y bd ps =
   let
@@ -228,6 +230,7 @@ countRuns bd ps = maximum
                   $ group
                   $ map (\y -> rowIsFull y bd ps) [1..20]
 
+-- Based on the lookup array defined in Score
 updateScore :: Int -> State -> State
 updateScore bonus st = over score lookItUp st
   where
@@ -237,6 +240,7 @@ updateScore bonus st = over score lookItUp st
       | n > 0 = s + (scores ! (l, n))
       | otherwise = s
 
+-- If the new score is higher than the old high.
 newHighScore :: State -> State
 newHighScore st = over highScore check st
   where
@@ -245,10 +249,18 @@ newHighScore st = over highScore check st
       | curr > high = curr
       | otherwise = high
 
+-- | gameOver checks if the game is over and if so ends the game
+gameOver :: State -> State
+gameOver st
+  | didFail (view board st) (extractLocs $ view falling st) = endGame st
+  | otherwise = st
+
+-- Returns true if the game is over
 didFail :: Board -> [Location] -> Bool
 didFail bd ps = any (\x -> (not $ ((x,20) `elem` ps)) &&
                            Empty /= (bd ! (x,20))) [1..10]
 
+-- Defines the transition to game over. Maintains the old high score.
 endGame :: State -> State
 endGame st = set randomBag newBag
              . set falling None
@@ -257,11 +269,6 @@ endGame st = set randomBag newBag
   where
     oldHigh = view highScore st
     newBag = pickRandomBag (oldHigh + (view score st) + 31)
-
-gameOver :: State -> State
-gameOver st
-  | didFail (view board st) (extractLocs $ view falling st) = endGame st
-  | otherwise = st
 
 -- | keyPress : handles user key press
 -- Space -> Drop hard
@@ -283,7 +290,9 @@ keyPress key st =
    Key.PKey -> pauseGame st
    _ -> st
 
--- X key
+-- X key, holds the falling piece. If there is a piece int he hold alrady
+-- it exchanges the two pieces. When we hold a piece we reset it to its
+-- initial position, reset the speed and update the board accordingly.
 doHold :: State -> State
 doHold st = showChangeInFalling (extractLocs f)
             . resetSpeed
@@ -300,6 +309,7 @@ doHold st = showChangeInFalling (extractLocs f)
        [held] -> (putInBag f, held, rb)
        xs -> ([head xs], f, rb)
 
+-- Adds a tetrimino to the hold bag and resets its position to its start pos.
 putInBag :: Tetrimino -> [Tetrimino]
 putInBag t =
   case t of
@@ -312,6 +322,13 @@ putInBag t =
    Z _ _ -> [initZ]
    None -> []
 
+-- | If R is pressed restart the game according to what state we are in.
+-- Over: just switch to active because the board etc. has already been reset
+-- by the game over handler.
+-- Start: begin a new game, sitch the gameState to active from initState
+-- Otherwise: set the high score to be the old high score, level to be the old
+-- level, make a new random bag and add a new falling piece then make the state
+-- active.
 restartGame :: State -> State
 restartGame st =
   case (view gameSt st) of
@@ -327,41 +344,61 @@ restartGame st =
     lvl = view level st
     newBag = pickRandomBag (lvl + hScr + 17)
 
+
+-- | If the game is paused make it active, otherwise pause it
 pauseGame :: State -> State
 pauseGame st =
   case (view gameSt st) of
   Paused -> set gameSt Active st
   _ -> set gameSt Paused st
 
--- Up key
--- We only want the locations that are actually on the board already
--- the initial points of the falling tet are on the board so a point
--- is a barrier if it is a wall or a tetrimino other than the original
--- copy of the one that is falling.
-isValidRotation :: Tetrimino -> Board -> Bool
-isValidRotation t bd =
+-- | Up key
+-- If the rotation is valid rotate the piece and do something similar to
+-- advance falling. Otherwise do nothing
+doRotation :: State -> State
+doRotation st
+  | isValidRotation st = resetSpeed
+                         . dropNew
+                         . addFallen
+                         . (showChangeInFalling (extractLocs $ view falling st))
+                         $ makeRotate st
+  | otherwise = st
+
+-- If there is no falling, makeRotate will drop a new one, so we want to check
+-- if the head of the random bag can rotate. Otherwise just check if the
+-- falling tetrimino can rotate about it's center.
+isValidRotation :: State -> Bool
+isValidRotation st =
+  case view falling st of
+   None -> checkT (head (view randomBag st)) (view board st)
+   f -> checkT f (view board st)
+
+-- Helper for isValidRotation
+checkT :: Tetrimino -> Board -> Bool
+checkT t bd =
   all (\(x,y) -> (inBoard bd (x,y)) && (not $ isBarrier (x,y) ps bd)) ps'
   where
     ps = extractLocs t
     ps' = extractLocs $ rotate t
 
+-- Using function from utils rotate the piece
 makeRotate :: State -> State
-makeRotate st = over falling rotate st
+makeRotate st
+  | (view falling st) == None =
+      let rb = view randomBag st in
+       over falling rotate
+       . set randomBag (tail rb)
+       $ set falling (head rb) st
+  | otherwise = over falling rotate
 
--- | Same as the case for advanceFalling
-doRotation :: State -> State
-doRotation st
-  | isValidRotation (view falling st) (view board st) =
-      advanceBag
-      . resetSpeed
-      . dropNew
-      . addFallen
-      . (showChangeInFalling (extractLocs $ view falling st))
-      $ makeRotate st
-  | otherwise = st
-
+-- When the game is inactive only update the state on key press, otherwise
+-- update the state based on time or key action.
 upstate :: Action -> State -> State
 upstate action oldSt =
-  case action of
-   KeyAction key -> keyPress key $ gameOver oldSt
-   TimeAction -> tick $ gameOver oldSt
+  case (action, view gameSt oldSt) of
+   (KeyAction key, Active) -> keyPress key $ gameOver oldSt
+   (TimeAction, Active) -> tick $ gameOver oldSt
+   (KeyAction key, Paused) -> keyPress key $ gameOver oldSt
+   (KeyAction key, Start) -> keyPress key $ gameOver oldSt
+   (KeyAction key, Over) -> keyPress key $ gameOver oldSt
+   _ -> oldSt
