@@ -51,9 +51,13 @@ gameOverView (w, h) = G.centeredCollage w h [background (toNum w) (toNum h)
   where
     bSide = h `div` 25
     shift = toNum bSide
-    title = makeTitle shift "Game Over"
-    instructions = G.move (8*shift, 8*shift)
-                   $ formatText (shift/2) "To start a new game press R"
+    title = G.moveY (-5*shift)
+            . G.toForm
+            . T.text
+            . T.header
+            . (T.color C.white)
+            $ T.toText "Game Over"
+    instructions = formatText (shift/2) "To start a new game press R"
 
 pauseView :: (Int, Int) -> G.Element
 pauseView (w, h) =
@@ -61,20 +65,24 @@ pauseView (w, h) =
   where
     bSide = h `div` 25
     shift = toNum bSide
-    title = makeTitle shift "Welcome to Tetris"
+    title = G.moveY (-5*shift)
+            . G.toForm
+            . T.text
+            . T.header
+            . (T.color C.white)
+            $ T.toText "Welcome to Tetris"
     mv = formatText (shift/2) "To move left, right, or down use arrow keys"
     upArr = formatText (shift/2) "To rotate the Tetrimino use the up arrow"
     sp = formatText (shift/2) "To drop hard, press space"
     rkey = formatText (shift / 2) "To start or restart the game use R"
     pkey = formatText (shift/2) "To find instructions and pause game use P"
     xkey = formatText (shift/2) "To hold use X"
-    instructions = G.move (8*shift, 8*shift)
-                   $ G.group [ mv
-                             , G.moveY (2+shift) upArr
-                             , G.moveY (2*(shift + 2)) sp
-                             , G.moveY (3*(shift+2)) rkey
-                             , G.moveY (4*(shift + 2)) pkey
-                             , G.moveY (5*(shift+2)) xkey]
+    instructions = G.group [ mv
+                           , G.moveY (2+shift) upArr
+                           , G.moveY (2*(shift + 2)) sp
+                           , G.moveY (3*(shift+2)) rkey
+                           , G.moveY (4*(shift + 2)) pkey
+                           , G.moveY (5*(shift+2)) xkey]
 
 gameView :: (Int, Int) -> State -> G.Element
 gameView (w,h) st =

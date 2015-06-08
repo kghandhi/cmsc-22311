@@ -224,6 +224,7 @@ main = hspec $ describe "Testing the control operations" $ do
     let bd = array ((0,0),(12,20)) (l ++ r ++ b++ mid ++ jP ++ other ++ iP1 ++iP2++iP3++iP4++iP5 )
     let st = State bd f 1 0 1 Active (initBag) [] 0 []
     let st' = clearRows st
+    let bd' = view board st'
     it "should detect 2 full rows" $ do
       countRuns bd (extractLocs f) `shouldBe` 2
     it "should detect that rows 1 and 2 are full" $ do
@@ -232,10 +233,12 @@ main = hspec $ describe "Testing the control operations" $ do
     it "should not call row 3 full" $ do
       rowIsFull 3 bd (extractLocs f) `shouldBe` False
     it "should properly clear those rows" $ do
-      let bd' = view board st
       all (\x -> Empty == (bd' ! (x,1))) [2..9] `shouldBe` True
+    it "should properly clear rows 2" $ do
       all (\x -> Empty == (bd' ! (x,2))) [2..10] `shouldBe` True
+    it "should properly clear row 3" $ do
       all (\x -> Empty == (bd' ! (x,3))) [2..10] `shouldBe` True
+    it "should properly clear row 4" $ do
       all (\x -> Empty == (bd' ! (x,4))) [1..10] `shouldBe` True
     it "should increase the score and high score" $ do
       (view score st') > 0 `shouldBe` True

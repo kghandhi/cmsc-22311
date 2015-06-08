@@ -158,25 +158,23 @@ clearRows st = newHighScore . (updateScore bonus) $ doClear st
 doClear :: State -> State
 doClear st = over board (clear 1) st
   where
-    clear 20 bd = bd
+    clear 19 bd = bd
     clear y bd
       | rowIsFull y bd ps = clear y (deleteRow y bd ps)
       | otherwise = clear (y + 1) bd
     ps = extractLocs $ view falling st
 
 deleteRow :: Int -> Board -> [Location] -> Board
-deleteRow y bd ps = mbd
+deleteRow yStart bd ps = mbd
   where
-    ignoreFalling a x
+    ignoreFalling a y x
       | not $ inBoard bd (x,y) = return ()
       | y + 1 > 20 = writeArray a (x, y) Empty
       | (x, y+1) `elem` ps = writeArray a (x, y) Empty
       | otherwise = (readArray a (x, y+1)) >>= (\v -> writeArray a (x, y) v)
     mbd = runSTArray $ do
       a <- thaw bd
-      mapM_ (ignoreFalling a) [1..10]
-      mapM_ (\x -> if (x,20) `elem` ps then return ()
-                   else writeArray a (x, 20) Empty) [1..10]
+      mapM_ (\y -> mapM_ (ignoreFalling a y) [1..10]) [yStart..20]
       return a
 
 rowIsFull :: Int -> Board -> [Location] -> Bool
@@ -337,5 +335,5 @@ doRotation st
 upstate :: Action -> State -> State
 upstate action oldSt =
   case action of
-   KeyAction key -> gameOver $ keyPress key oldSt
-   TimeAction -> gameOver $ tick oldSt
+   KeyAction key -> keyPress key $ gameOver oldSt
+   TimeAction -> tick $ gameOver oldSt
