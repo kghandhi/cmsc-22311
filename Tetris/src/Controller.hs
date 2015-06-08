@@ -224,19 +224,17 @@ didFail bd ps = any (\x -> (not $ ((x,20) `elem` ps)) &&
                            Empty /= (bd ! (x,20))) [1..10]
 
 endGame :: State -> State
-endGame st = overState
+endGame st = set randomBag newBag
+             . set falling None
+             . set highScore oldHigh
+             $ set gameSt Over initState
   where
     oldHigh = view highScore st
     newBag = pickRandomBag (oldHigh + (view score st) + 31)
-    overState = set randomBag newBag
-                . set falling None
-                . set highScore oldHigh
-                $ set gameSt Over initState
-
 
 gameOver :: State -> State
 gameOver st
-  | didFail (view board st) (extractLocs $ view falling st) = initState
+  | didFail (view board st) (extractLocs $ view falling st) = endGame st
   | otherwise = st
 
 -- | keyPress : handles user key press
@@ -289,18 +287,19 @@ putInBag t =
    None -> []
 
 restartGame :: State -> State
-restartGame st = st'
+restartGame st =
+  case (view gameSt st) of
+    Over -> set gameSt Active st
+    Start -> set gameSt Active initState
+    _ -> set gameSt Active
+         . (set randomBag (tail newBag))
+         . (set falling (head newBag))
+         . (set level lvl)
+         $ set highScore hScr initState
   where
     hScr = view highScore st
     lvl = view level st
     newBag = pickRandomBag (lvl + hScr + 17)
-    st' = case (view gameSt st) of
-           Over -> set gameSt Active
-           Start -> initState
-           _ -> (set randomBag (tail newBag))
-                . (set falling (head newBag))
-                . (set level lvl)
-                $ set highScore hScr initState
 
 pauseGame :: State -> State
 pauseGame st = st'

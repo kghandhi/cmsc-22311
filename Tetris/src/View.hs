@@ -45,8 +45,9 @@ buildBoard bd bSide =
    G.group $ foldl (\acc y -> (buildRow y) ++ acc) [] [0..20]
 
 gameOverView :: (Int, Int) -> G.Element
-gameOverView w h =
-  G.centeredCollage w h [background (toNum w) (toNum h), title, instructions]
+gameOverView (w, h) = G.centeredCollage w h [background (toNum w) (toNum h)
+                                         , title
+                                         , instructions]
   where
     bSide = h `div` 25
     shift = toNum bSide
@@ -55,7 +56,7 @@ gameOverView w h =
                    $ formatText (shift/2) "To start a new game press R"
 
 pauseView :: (Int, Int) -> G.Element
-pauseView w h =
+pauseView (w, h) =
   G.centeredCollage w h [background (toNum w) (toNum h), title, instructions]
   where
     bSide = h `div` 25
@@ -100,7 +101,7 @@ gameView (w,h) st =
 -- Block height is maybe the size of the window divided by 25?
 view :: (Int, Int) -> State -> G.Element
 view (w,h) st =
-  case (view gameSt st) of
+  case (Lens.view gameSt st) of
    Active -> gameView (w,h) st
    Over -> gameOverView (w,h)
    _ -> pauseView (w,h)

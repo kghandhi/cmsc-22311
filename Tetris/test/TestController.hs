@@ -163,7 +163,7 @@ main = hspec $ describe "Testing the control operations" $ do
       let b = [((x,0), Wall) | x<-[1..5]]
       let t = [(xy, Filled (I ps (3,4))) | xy <- ps]
       let bd = array ((0,0),(6,5)) (t ++ b ++ r ++ l ++ emp)
-      let st = State bd (I ps (3,4)) 1 0.4 0 1 Active (drop 2 initBag) [] "" 0 []
+      let st = State bd (I ps (3,4)) 1 0 1 Active (drop 2 initBag) [] 0 []
       let st' = doRotation st
       let bd' = view board st'
       let f' = view falling st'
@@ -221,8 +221,7 @@ main = hspec $ describe "Testing the control operations" $ do
     let iP4 = [(xy, Filled i4) | xy <- (extractLocs i4)]
     let iP5 = [(xy, Filled i5) | xy <- (extractLocs i5)]
     let other = [(xy, Filled f) | xy <- (extractLocs f)]
-    let bd = array ((0,0),(12,20))
-        (l ++ r ++ b++ mid ++ jP ++ other ++ iP1 ++iP2++iP3++iP4++iP5 )
+    let bd = array ((0,0),(12,20)) (l ++ r ++ b++ mid ++ jP ++ other ++ iP1 ++iP2++iP3++iP4++iP5 )
     let st = State bd f 1 0 1 Active (initBag) [] 0 []
     let st' = clearRows st
     it "should detect 2 full rows" $ do
