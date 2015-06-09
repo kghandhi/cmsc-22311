@@ -10,6 +10,7 @@ import Tetris
 import Model
 import Utils
 
+-- Given a cell use Models to draw it
 cellToForm :: Cell -> Double -> G.Form
 cellToForm c bSide =
   case c of
@@ -27,13 +28,20 @@ cellToForm c bSide =
       None -> empty bSide
    _ -> empty bSide
 
+-- Format the normal text.
 formatText :: Double -> String -> G.Form
 formatText shift = G.toForm . T.text . (T.height shift) . (T.color C.white) . T.toText
 
+-- Format the title to the game
 makeTitle :: Double -> String -> G.Form
-makeTitle shift = G.move (6*shift, -2*shift) . G.toForm . T.text . T.header
-                  . (T.color C.white) . T.toText
+makeTitle shift = G.move (6*shift, -2*shift)
+                  . G.toForm
+                  . T.text
+                  . T.header
+                  . (T.color C.white)
+                  . T.toText
 
+-- For each cell in the board draw it
 buildBoard :: Board -> Int -> G.Form
 buildBoard bd bSide =
   let
@@ -44,13 +52,13 @@ buildBoard bd bSide =
   in
    G.group $ foldl (\acc y -> (buildRow y) ++ acc) [] [0..20]
 
+-- If the game is over, show the game over screen
 gameOverView :: (Int, Int) -> G.Element
 gameOverView (w, h) = G.centeredCollage w h [background (toNum w) (toNum h)
-                                         , title
-                                         , instructions]
+                                            , title
+                                            , instructions]
   where
-    bSide = h `div` 25
-    shift = toNum bSide
+    shift = toNum (h `div` 25)
     title = G.moveY (-5*shift)
             . G.toForm
             . T.text
@@ -59,6 +67,7 @@ gameOverView (w, h) = G.centeredCollage w h [background (toNum w) (toNum h)
             $ T.toText "Game Over"
     instructions = formatText (shift/2) "To start a new game press R"
 
+-- If the game is paused, show the pause view
 pauseView :: (Int, Int) -> G.Element
 pauseView (w, h) =
   G.centeredCollage w h [background (toNum w) (toNum h), title, instructions]
@@ -84,6 +93,7 @@ pauseView (w, h) =
                            , G.moveY (4*(shift + 2)) pkey
                            , G.moveY (5*(shift+2)) xkey]
 
+-- If the game is active, show the actual game
 gameView :: (Int, Int) -> State -> G.Element
 gameView (w,h) st =
   let
@@ -94,19 +104,20 @@ gameView (w,h) st =
     lvl = (formatText (shift/2)) $ "Level: " ++ (show $ Lens.view level st)
     highScr = (formatText (shift/2))
               $ "High Score: " ++ (show $ Lens.view highScore st)
-    stats = G.group [scr, G.moveY (2+shift) lvl, G.moveY (2*shift+4) highScr]
-    currScore = (G.move (16*shift, 14*shift)) stats
-    -- Maybe do some magic about where to start building
+    stats = G.move (16*shift, 14*shift)
+            $ G.group [scr
+                      , G.moveY (2+shift) lvl
+                      , G.moveY (2*shift+4) highScr]
     currBoard = buildBoard (Lens.view board st) bSide
     toDisplay = G.move (-6*shift, (-9)*shift)
                 $ G.group [background (toNum w) (toNum h)
-                          , currScore
+                          , stats
                           , title
                           , currBoard]
   in
    G.centeredCollage w h [toDisplay]
 
--- Block height is maybe the size of the window divided by 25?
+-- General view function that displays the right view based on the game state
 view :: (Int, Int) -> State -> G.Element
 view (w,h) st =
   case (Lens.view gameSt st) of

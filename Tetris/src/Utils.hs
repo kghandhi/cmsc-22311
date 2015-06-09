@@ -18,11 +18,13 @@ extractLocs t =
    Z ps _ -> ps
    _ -> []
 
+-- Check that a location is on the board
 inBoard :: Board -> Location -> Bool
 inBoard bd (x,y) = x <= xmax && y <= ymax
   where
     (_, (xmax, ymax)) = bounds bd
 
+-- Get the center of a tetrimino. We will say a none tet has center (0,0)
 extractCenter :: Tetrimino -> Center
 extractCenter t =
   case t of
@@ -35,17 +37,23 @@ extractCenter t =
    Z _ c -> c
    None -> (0,0)
 
+-- Useful for converting integers to numbers (because the width and
+-- height of a window are given as integers)
 toNum :: (Num c, Integral a) => a -> c
 toNum = fromInteger . toInteger
 
+-- | To rotate a set of points around a center (that is not at (0,0) we must
+-- normalize those points (center them at the origin), perform the transformation
+-- sending (x,y) to (y,-x), then move the points back to their original center.
+-- Notice this operation does not change the center of the tetrimino, only
+-- the locations it ocupies.
 normalize :: Center -> [Location] -> [(Double, Double)]
 normalize (cx, cy) ps = map (\(x,y) -> ((toNum x)-cx, (toNum y)-cy)) ps
 
 turnBack :: Center -> [(Double, Double)] -> [Location]
 turnBack (cx, cy) fs = map (\(x,y) -> ((floor $ x + cx), (floor $ y + cy - 1))) fs
--- maybe this iwll do it
 
--- | Must be a full, 4 box tet
+--  Must be a full, 4 box tet
 rotate :: Tetrimino -> Tetrimino
 rotate t =
   let doForT c ps = turnBack c $ map (\(x,y)->(y,-x)) $ normalize c ps in

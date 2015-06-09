@@ -2,9 +2,9 @@
 module Tetris where
 
 import Control.Lens
-import System.Random (randomRs, mkStdGen)
 import Data.Array (Array, array)
 import Data.List (sort)
+import System.Random (randomRs, mkStdGen)
 
 type Location = (Int, Int)
 type Center = (Double, Double)
@@ -14,7 +14,7 @@ data GameState = Start | Paused | Active | Over deriving (Eq, Show)
 -- But well modify it using freeze and thaw
 type Board = Array Location Cell
 
--- The Ghost piece is the shadow, is not implemented
+-- The Ghost piece is the shadow, is not implemented (next version)
 data Cell = Wall | Empty | Filled Tetrimino | Ghost Tetrimino
           deriving (Show, Eq)
 
@@ -28,6 +28,8 @@ data Tetrimino = I [Location] Center -- Cyan 0
                | None
                deriving (Read, Show)
 
+-- Two tetriminos are the same if they occupy the same locations and
+-- are the same shape. For testing purposes don't care about the center
 instance Eq Tetrimino where
   t1 == t2 =
     case (t1,t2) of
@@ -55,6 +57,7 @@ data State = State {
   } deriving Show
 makeLenses ''State
 
+-- These are where each tetrimino starts out when it is dropped
 initI :: Tetrimino
 initI = I [(4,20), (5,20), (6,20), (7,20)] (6,21)
 
@@ -84,6 +87,7 @@ pickRandomBag seed = map (tets !!)
   where
     tets = [ initI, initJ, initL, initO, initS, initT, initZ ]
 
+-- Start with a blank board
 initBoard :: Board
 initBoard = array ((0,0), (11,20))
             $ leftBorder ++ rightBorder ++ bottomBorder ++ mid
@@ -93,9 +97,13 @@ initBoard = array ((0,0), (11,20))
     bottomBorder = [((x,0), Wall) | x <- [1..10]]
     mid = [((x,y), Empty) | x <- [1..10], y <- [1..20]]
 
+-- In a better game I would make this random each time so that the first
+-- game was not always the same...
 initBag :: [Tetrimino]
 initBag = pickRandomBag 17
 
+-- I want to be able to pick from the bag and if for some reason the bag
+-- were empty, choose a new bag
 safeHead :: [Tetrimino] -> Tetrimino
 safeHead [] = head $ pickRandomBag 19
 safeHead ls = head ls

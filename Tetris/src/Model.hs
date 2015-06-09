@@ -4,8 +4,6 @@ import qualified FRP.Helm.Graphics as G
 import qualified FRP.Helm.Color as C
 
 -- | my colors
-myPurple = C.rgb 0.482 0.4078 0.93333
-myBlue = C.rgb 0.282 0.8196 0.8
 myOrange = C.rgb 0.804 0.522 0.247
 myRed = C.rgb 0.698 0.1333 0.1333
 

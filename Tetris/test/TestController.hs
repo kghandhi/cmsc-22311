@@ -234,11 +234,8 @@ main = hspec $ describe "Testing the control operations" $ do
       rowIsFull 3 bd (extractLocs f) `shouldBe` False
     it "should properly clear those rows" $ do
       all (\x -> Empty == (bd' ! (x,1))) [2..9] `shouldBe` True
-    it "should properly clear rows 2" $ do
       all (\x -> Empty == (bd' ! (x,2))) [2..10] `shouldBe` True
-    it "should properly clear row 3" $ do
       all (\x -> Empty == (bd' ! (x,3))) [2..10] `shouldBe` True
-    it "should properly clear row 4" $ do
       all (\x -> Empty == (bd' ! (x,4))) [1..10] `shouldBe` True
     it "should increase the score and high score" $ do
       (view score st') > 0 `shouldBe` True
