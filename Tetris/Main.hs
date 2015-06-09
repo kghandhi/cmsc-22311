@@ -27,7 +27,7 @@ fakeMerge st sk = lift2 (\t ks -> if ks == [] then TimeAction
                                   else KeyAction (head ks)) st sk
 
 actions :: Signal Action
-actions = mergy (fps 1.7) (keysDown)
+actions = fakeMerge (fps 1.7) (keysDown)
 
 -- Update state whenever a Signal Action fires
 currState :: Signal State

@@ -4,7 +4,10 @@ import qualified FRP.Helm.Graphics as G
 import qualified FRP.Helm.Color as C
 
 -- | my colors
+myOrange :: C.Color
 myOrange = C.rgb 0.804 0.522 0.247
+
+myRed :: C.Color
 myRed = C.rgb 0.698 0.1333 0.1333
 
 background :: Double -> Double -> G.Form
