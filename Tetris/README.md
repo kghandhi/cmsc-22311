@@ -1,9 +1,13 @@
 # Tetris
 To install you need
 1. _Exactly_ ghc version 7.8.4
-2. SDL2 version 2.0.3
-3. Probably linux
-
+2. SDL2 version 2.0.3 (build from source)
+3. Then on linux do:
+```
+sudo apt-get install libcairo2 libcairo2-dev
+sudo apt-get install libpango1.0.0 libpango1.0.0-dev
+```
+4. Start a sandbox and run these commands in this order:
 ```
 cabal sandbox init
 cabal install gtk2hs-buildtools
@@ -14,7 +18,7 @@ cabal install helm
 cabal install --dependencies-only --enable-tests
 cabal configure --enable-tests
 ```
-then to run the test squite
+then to run the tests
 ```
 cabal test
 ```
